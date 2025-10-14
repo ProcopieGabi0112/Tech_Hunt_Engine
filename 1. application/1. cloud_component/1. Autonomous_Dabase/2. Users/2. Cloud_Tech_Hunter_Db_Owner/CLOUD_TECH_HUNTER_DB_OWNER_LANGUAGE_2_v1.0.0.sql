@@ -50,7 +50,7 @@ SELECT COUNT(*) INTO v_count
 FROM all_tables
 WHERE owner = 'TECH_HUNTER_DB_OWNER'
 AND table_name = 'LANGUAGE'
-AND tablespace_name = 'SAMPLESCHEMA';
+AND tablespace_name = 'DATA';
 IF v_count = 1 THEN
     RAISE_APPLICATION_ERROR(-20001,'The LANGUAGE table wasnt created properly.');
 END IF;
@@ -124,4 +124,5 @@ EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
+
 /
