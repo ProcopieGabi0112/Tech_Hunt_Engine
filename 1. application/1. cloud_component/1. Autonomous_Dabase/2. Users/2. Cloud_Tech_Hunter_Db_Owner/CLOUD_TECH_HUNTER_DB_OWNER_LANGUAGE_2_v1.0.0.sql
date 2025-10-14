@@ -51,7 +51,7 @@ FROM all_tables
 WHERE owner = 'TECH_HUNTER_DB_OWNER'
 AND table_name = 'LANGUAGE'
 AND tablespace_name = 'DATA';
-IF v_count = 1 THEN
+IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The LANGUAGE table wasnt created properly.');
 END IF;
 DBMS_OUTPUT.PUT_LINE('[2.] The LANGUAGE table was created.');
@@ -126,3 +126,4 @@ EXCEPTION
 END;
 
 /
+
