@@ -79,7 +79,12 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.deleted_flag 
 
 --CREATE SEQUENCE SEQ_LANGUAGE_ID FOR PRIMARY KEY
 --DELETE SEQUENCE IF EXISTS;
-EXECUTE IMMEDIATE 'DROP SEQUENCE seq_language_id';
+SELECT COUNT(*) INTO v_count
+FROM user_sequences
+WHERE sequence_name = 'SEQ_LANGUAGE_ID';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE tech_hunter_db_owner.seq_language_id';
+END IF;
 --CREATE SEQUENCE
  EXECUTE IMMEDIATE '
     CREATE SEQUENCE seq_language_id
@@ -88,19 +93,49 @@ EXECUTE IMMEDIATE 'DROP SEQUENCE seq_language_id';
     NOCACHE
     NOCYCLE
   ';
+SELECT COUNT(*) INTO v_count
+FROM user_sequences
+WHERE sequence_name = 'SEQ_LANGUAGE_ID';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The SEQ_LANGUAGE_ID sequence wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[3.] The SEQ_LANGUAGE_ID sequence for primary key was created.');
 
---CREATE TRIGGER FOR PRIMARY KEY
-v_sql := 'CREATE OR REPLACE TRIGGER trg_language_id
+--CREATE TRIGGER FOR PRIMARY KEY;
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'trg_language_id_pk';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER tech_hunter_db_owner.trg_language_id_pk';
+END IF;
+--CREATE TRIGGER
+v_sql := 'CREATE OR REPLACE TRIGGER trg_language_id_pk
           BEFORE INSERT ON tech_hunter_db_owner.language
           FOR EACH ROW
           WHEN (NEW.lang_code IS NULL)
           BEGIN
              SELECT seq_language_id.NEXTVAL INTO :NEW.lang_code FROM dual;
-          END;';
+          END;';          
 EXECUTE IMMEDIATE v_sql;
-
+--CHECK IG THE TRiGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_LANGUAGE_ID_PK';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_LANGUAGE_ID_PK trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[4.] The TRG_LANGUAGE_ID_PK trigger for primary key was created.');
 --CREATE TRIGGER FOR TECHNICAL COLUMNS
-v_sql := '  CREATE OR REPLACE TRIGGER trg_language_technical_columns
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_LANGUAGE_TECH_COL';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER tech_hunter_db_owner.trg_language_tech_col';
+END IF;
+--CREATE TRIGGER
+v_sql := '  CREATE OR REPLACE TRIGGER trg_language_tech_col
             BEFORE INSERT OR UPDATE ON tech_hunter_db_owner.language
             FOR EACH ROW
             BEGIN
@@ -117,13 +152,18 @@ v_sql := '  CREATE OR REPLACE TRIGGER trg_language_technical_columns
                  END IF;
             END;';
 EXECUTE IMMEDIATE v_sql;
+--CHECK IG THE TRiGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_LANGUAGE_TECH_COL';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_LANGUAGE_TECH_COL trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[5.] The TRG_LANGUAGE_TECH_COL trigger for technical columns was created.');
 
-
-DBMS_OUTPUT.PUT_LINE('[3.] The script running is done!');
+DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
-
 /
-
