@@ -46,6 +46,7 @@ v_sql := q'[
           deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL,
           CONSTRAINT pk_utilizatori_id_email PRIMARY KEY (user_id, email),
           CONSTRAINT uk_utilizatori_user_id UNIQUE (user_id),
+	      CONSTRAINT uk_utilizatori_email UNIQUE (email)
           CONSTRAINT fk_native_lang_code FOREIGN KEY (native_lang_code) REFERENCES language(lang_code)
 )
     ]';
@@ -183,4 +184,5 @@ EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
+
 /
