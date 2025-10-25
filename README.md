@@ -75,6 +75,6 @@ This platform merges:
 
 ---
 
-## 🧑‍💻 Author
+## 🧑‍💻 Author - Procopie Gabriel
 
-**Chef** – Data Analyst & Software Developer passionate about data-driven insights, intelligent systems, and building meaningful user experiences.
+Data Analyst & Software Developer passionate about data-driven insights, intelligent systems, and building meaningful user experiences.
