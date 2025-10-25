@@ -8,7 +8,7 @@ The system ensures both scalability and offline usability, allowing users to int
 
 ---
 
-## ☁️ Cloud Component (Oracle Cloud Infrastructure)
+## ☁️ 1. Cloud Component (Oracle Cloud Infrastructure)
 
 The **Cloud Component** is responsible for **data processing, AI-driven recommendation generation, and automated reporting**.
 
@@ -21,6 +21,15 @@ The **Cloud Component** is responsible for **data processing, AI-driven recommen
 | **AI Model Execution Environment** | A serverless or containerized process (e.g., OCI Function or Data Science Job) that runs the recommendation model. It analyzes the processed data and identifies users with `report_flag_sent = 'N'`. |
 | **Email & PDF Report Service** | Once a user’s data is processed, the system generates a personalized PDF report with job and technology recommendations and sends it to the user’s registered email address. |
 
+## 🔧 Cloud Technology Stack
+
+| Layer | Technology |
+|--------|-------------|
+| **Cloud Databases** | Oracle Autonomous Database, Oracle Autonomous Data Warehouse |
+| **AI/Automation** | OCI Functions / Python ML Scripts |
+| **Synchronization** | Custom Replication Scripts (Python / Spring Batch) |
+| **PDF & Email Services** | Python, ReportLab, SMTP integration |
+
 ### ⚙️ Cloud Workflow
 
 1. **Data Storage** – User data initially uploaded or synchronized from local systems is stored in the **Autonomous Database (ADB)**.  
@@ -32,10 +41,19 @@ The **Cloud Component** is responsible for **data processing, AI-driven recommen
 
 ---
 
-## 💻 Local Component
+## 💻 2. Local Component
 
 The **Local Component** provides a user-friendly interface for data entry, local analytics, and offline operation.  
 It synchronizes periodically with the cloud to ensure all user data remains consistent and up to date.
+
+## 🔧 Local Technology Stack
+
+| Layer | Technology |
+|--------|-------------|
+| **Frontend** | React (Web) |
+| **Backend** | Spring Boot |
+| **Local Databases** | PostgreSQL, MongoDB |
+| **Containerization** | Docker |
 
 ### 🔹 Key Databases
 
@@ -74,32 +92,4 @@ When a user completes all required data and confirms submission:
 5. The user’s record is updated (`report_flag_sent = 'Y'`).
 
 ---
-
-## 🔧 Technology Stack
-
-| Layer | Technology |
-|--------|-------------|
-| **Frontend** | React (Web) |
-| **Backend** | Spring Boot |
-| **Local Databases** | PostgreSQL, MongoDB |
-| **Cloud Databases** | Oracle Autonomous Database, Oracle Autonomous Data Warehouse |
-| **AI/Automation** | OCI Functions / Python ML Scripts |
-| **Containerization** | Docker |
-| **Synchronization** | Custom Replication Scripts (Python / Spring Batch) |
-| **PDF & Email Services** | Python, ReportLab, SMTP integration |
-
----
-
-## 🧭 Data Flow Overview
-
-```mermaid
-flowchart LR
-    A[User Interface (React)] --> B[MongoDB (JSON Storage)]
-    B -->|Validated Data| C[PostgreSQL (Local Analytics)]
-    C -->|Sync Job| D[Oracle Autonomous Database]
-    D --> E[Oracle Autonomous Data Warehouse]
-    E --> F[AI Model & Recommendation Engine]
-    F --> G[PDF Generator + Email Service]
-    G --> H[User Receives Report]
-    F -->|Update Flag| D
 
