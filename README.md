@@ -1,8 +1,7 @@
 # 🚀 Tech_Hunter_Engine
 
-> *Turning data into direction — discover your ideal IT career path.*
-
----
+> *From "Hello World" ... To Dream Job*
+--- 
 
 ## 🌟 Quick Glance at Tech_Hunter_Engine
 
@@ -29,11 +28,16 @@ These visuals give a preview of what users experience inside **Tech_Hunter_Engin
 | 🥉 | Java | 17.8 |
 | 4️⃣ | C# | 9.4 |
 | 5️⃣ | TypeScript | 6.7 |
+---
+### 🔹 Top IT Companies in Romania
 
-### 📊 Example Trend Chart
-![Programming Languages Popularity Chart](assets/images/programming_trends.png)
-
-> *(The chart above represents how Tech_Hunter_Engine visualizes real-time data on technology adoption.)*
+| Rank | Company | Focus Area | Approx. Employees | Headquarters |
+|:----:|:---------|:------------|:-----------------:|:--------------|
+| 🥇 | Endava | Software Development, Cloud Solutions | 4,000+ | Bucharest, Cluj-Napoca |
+| 🥈 | Luxoft | Automotive, Banking, Telecom | 3,500+ | Bucharest |
+| 🥉 | IBM Romania | Cloud, AI, Consulting | 3,000+ | Bucharest |
+| 4️⃣ | Accenture | Digital Transformation, AI, Consulting | 2,800+ | Bucharest, Timișoara |
+| 5️⃣ | Ubisoft Romania | Game Development, QA, Design | 2,500+ | Bucharest |
 
 ---
 
@@ -50,14 +54,6 @@ Whether you’re a student entering tech, a junior developer seeking direction, 
 
 The mission of **Tech_Hunter_Engine** is to **bridge the gap between learning and employment** in the technology sector.  
 Instead of randomly choosing what to study next, users receive **data-driven guidance** based on market trends, job analytics, and skill demand.
-
----
-
-## 🖼️ App Preview
-
-| Home Page | Dashboard | PDF Report |
-|------------|------------|------------|
-| ![Home](assets/images/home.png) | ![Dashboard](assets/images/dashboard.png) | ![Report](assets/images/report.png) |
 
 ---
 
@@ -87,9 +83,9 @@ Instead of randomly choosing what to study next, users receive **data-driven gui
 
 | Layer | Technology |
 |--------|-------------|
-| Frontend | React, Tailwind CSS |
+| Frontend | React |
 | Backend | Spring Boot |
-| Database | PostgreSQL (Local + Cloud), MongoDB |
+| Database | PostgreSQL (Local), MongoDB(Local), ADB(Cloud), ADW(Cloud) |
 | Containerization | Docker |
 | Authentication | Oracle Cloud (OAuth2 / JWT) |
 | Analytics | Python, Pandas, Matplotlib |
