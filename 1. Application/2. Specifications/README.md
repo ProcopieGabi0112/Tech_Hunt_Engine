@@ -7,6 +7,7 @@
 
 **Tech_Hunter_Engine** is an intelligent web platform application that need a place where all the information about the data must stay. This is the place.
 By analyzing the Data Catalogue, we can discover all the tables and the columns associated with tables. In this application, we will have some tables that will be imported from cloud to local component. All the specifications for all tables can be found here
+
 ---
 > *From "Hello World" ... To Dream Job*
 - **tech_hunter_engine_DB_owner** – Oracle Cloud Database Main Schema.
