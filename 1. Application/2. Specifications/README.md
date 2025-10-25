@@ -1,60 +1,46 @@
-# Tech Platform
+# 🚀 Tech_Hunter_Engine - Specifications
 
-## _Business Needs_
-#### This is an app that will help you to find an it job in no time. Here you will receive an report where you can find a list of jobs that can fit you.
+> *From "Hello World" ... To Dream Job*
+--- 
 
-## *Platform Arhitecture*
-#### This application will be split in two environment. First environment will be local and the second will be in oracle cloud.
- 
-### `First Component`
-(_student input_)
-### Introduction.
+## 🌟 1. Data Catalogue
 
-In this component i want to create an app where students can enter their studies,knowledge and needs for a job.
+**Tech_Hunter_Engine** is an intelligent web platform application that need a place where all the information about the data must stay. This is the place.
+By analyzing the Data Catalogue, we can discover all the tables and the columns associated with tables. In this application, we will have some tables that will be imported from cloud to local component. All the specifications for all tables can be found here
+---
+> *From "Hello World" ... To Dream Job*
+- **tech_hunter_engine_DB_owner** – Oracle Cloud Database Main Schema.
+- **tech_hunter_engine_DB_tst_owner** – Oracle Cloud Database Test Schema.
+---
+ > *From "Hello World" ... To Dream Job*
+- **tech_hunter_engine_DW_owner** – Oracle Cloud Datawarehouse Main Schema.
+- **tech_hunter_engine_DW_out_owner** – Oracle Cloud Datawarehouse Exposure Schema.
+- **tech_hunter_engine_DW_tst_owner** – Oracle Cloud Datawarehouse Test Schema.
 
-### Technology
+- **tech_hunter_engine_DB_out_owner** – Oracle Cloud Database Exposure Schema.
 
-#### As technologies i want to use: 
-#### `Docker` - all component under one roof.
-#### `Java & Spring Boot` - for backend.
-#### `Javascript & React` - for frontend.
-#### `MongoDb` - student cv as json.
-#### `PostgresDb` - processing jsons.
-#### `Cronjob` - sql jobs programming
-#### `Python ETL Scripting` - jobs creations
-#### `RabbitMQ` - jsons manip.
-#### `MongoDb Change Streams` - json manip.
+- **tech_hunter_engine_Postgres_owner** – Postgress Main Schema(all the transaction from cloud to local).
+- **tech_hunter_engine_Postgress_out_owner** – Oracle Cloud Datawarehouse Exposure Schema.
+- **tech_hunter_engine_Postgress_tst_owner** – Oracle Cloud Datawarehouse Test Schema.
 
- 
-### `Second Component`
-(_cloud computing_)
-### Introduction.
+  
+- **tech_hunter_engine_DW_owner** – Oracle Cloud Main Schema.
+- **tech_hunter_engine_DW_out_owner** – Oracle Cloud Exposure Schema.
+- **tech_hunter_engine_DW_tst_owner** – Oracle Cloud Test Schema.
 
-In this component i want to copy the data from local and i want to create an environment where i can process all the data an create an report where where the student can see a list of recommended jobs and other stuff can help him to be hired as fast as possible.
-
-### Technology
-
-#### As technologies i want to use: 
-#### `Oracle Cloud Infrastructure` - processing
-#### `Python Scripting` - data manipulation.
-
-### `Third Component` 
-( _HR employee input_ )
-
-### Introduction.
-In this component HR employee can see the students and their needs about technologies and stuff about their employees.
-### Technology
-
-#### As technologies i want to use: 
-#### `Docker` - all component under one roof.
-#### `Java & Spring Boot` - for backend.
-#### `Javascript & React` - for frontend.
-#### `MongoDb` - student cv as json.
-#### `PostgresDb` - processing jsons.
-#### `Cronjob` - sql jobs programming
-#### `Python ETL Scripting` - jobs creations
-#### `RabbitMQ` - jsons manip.
-#### `MongoDb Change Streams` - json manip.
+-   
+- **Insightful Visualizations** – View data on trending technologies and job roles.  
+- **Personalized Job Recommendations** – Tailored IT roles and learning paths.  
+- **Automated Career Reports** – Receive detailed PDF reports via email.  
+- **Continuous Learning System** – Uses aggregated insights to improve future recommendations.
 
 
 
+Whether you’re a student entering tech, a junior developer seeking direction, or a professional planning a career shift, **Tech_Hunter_Engine** acts as your personal digital career advisor.
+
+---
+
+
+## 🧑‍💻 Author - Procopie Gabriel
+
+Data Analyst & Software Developer passionate about analytics, automation, and empowering users to make smarter career decisions.
