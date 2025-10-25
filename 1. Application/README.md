@@ -1,60 +1,28 @@
-# Tech Platform
+# 🏗️ Tech_Hunter_Engine – System Architecture Overview
 
-## _Business Needs_
-#### This is an app that will help you to find an it job in no time. Here you will receive an report where you can find a list of jobs that can fit you.
+## 🌐 General Description
 
-## *Platform Arhitecture*
-#### This application will be split in two environment. First environment will be local and the second will be in oracle cloud.
- 
-### `First Component`
-(_student input_)
-### Introduction.
+**Tech_Hunter_Engine** is built on a **hybrid architecture** that combines **local processing and data entry** with **cloud-based analytics, automation, and AI-driven recommendations**.  
+The system ensures both scalability and offline usability, allowing users to interact locally while maintaining continuous synchronization with cloud resources.
 
-In this component i want to create an app where students can enter their studies,knowledge and needs for a job.
+---
 
-### Technology
+## ☁️ Cloud Component (Oracle Cloud Infrastructure)
 
-#### As technologies i want to use: 
-#### `Docker` - all component under one roof.
-#### `Java & Spring Boot` - for backend.
-#### `Javascript & React` - for frontend.
-#### `MongoDb` - student cv as json.
-#### `PostgresDb` - processing jsons.
-#### `Cronjob` - sql jobs programming
-#### `Python ETL Scripting` - jobs creations
-#### `RabbitMQ` - jsons manip.
-#### `MongoDb Change Streams` - json manip.
+The **Cloud Component** is responsible for **data processing, AI-driven recommendation generation, and automated reporting**.
 
- 
-### `Second Component`
-(_cloud computing_)
-### Introduction.
+### 🔹 Key Elements
 
-In this component i want to copy the data from local and i want to create an environment where i can process all the data an create an report where where the student can see a list of recommended jobs and other stuff can help him to be hired as fast as possible.
+| Component | Description |
+|------------|-------------|
+| **Oracle Autonomous Database (ADB)** | Main transactional database in the cloud. Stores all user profiles, form submissions, and processed data from the local environment. |
+| **Oracle Autonomous Data Warehouse (ADW)** | Dedicated for analytics and machine learning. Receives data periodically from the ADB to enable complex processing and AI model training. |
+| **AI Model Execution Environment** | A serverless or containerized process (e.g., OCI Function or Data Science Job) that runs the recommendation model. It analyzes the processed data and identifies users with `report_flag_sent = 'N'`. |
+| **Email & PDF Report Service** | Once a user’s data is processed, the system generates a personalized PDF report with job and technology recommendations and sends it to the user’s registered email address. |
 
-### Technology
+### ⚙️ Cloud Workflow
 
-#### As technologies i want to use: 
-#### `Oracle Cloud Infrastructure` - processing
-#### `Python Scripting` - data manipulation.
-
-### `Third Component` 
-( _HR employee input_ )
-
-### Introduction.
-In this component HR employee can see the students and their needs about technologies and stuff about their employees.
-### Technology
-
-#### As technologies i want to use: 
-#### `Docker` - all component under one roof.
-#### `Java & Spring Boot` - for backend.
-#### `Javascript & React` - for frontend.
-#### `MongoDb` - student cv as json.
-#### `PostgresDb` - processing jsons.
-#### `Cronjob` - sql jobs programming
-#### `Python ETL Scripting` - jobs creations
-#### `RabbitMQ` - jsons manip.
-#### `MongoDb Change Streams` - json manip.
-
+1. **Data Storage** – User data initially uploaded or synchronized from local systems is stored in the **Autonomous Database (ADB)**.  
+2. **Data Transfer** – Relevant datasets are replicated from ADB int
 
 
