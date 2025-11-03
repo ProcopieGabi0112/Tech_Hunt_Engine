@@ -1,10 +1,13 @@
+SET SERVEROUTPUT ON;
 BEGIN
-  -- 1️⃣ Ștergem mai întâi toate constrângerile
+  DBMS_OUTPUT.PUT_LINE('===== Încep curătarea completă a schemei TECH_HUNTER_DB_OWNER =====');
+
+  -- 1️⃣ Ștergem mai întâi toate constrângerile (FK, PK, UNIQUE, CHECK)
   FOR cons IN (
     SELECT table_name, constraint_name
     FROM all_constraints
     WHERE owner = UPPER('TECH_HUNTER_DB_OWNER')
-      AND constraint_type IN ('R', 'P', 'U', 'C') -- FK, PK, Unique, Check
+      AND constraint_type IN ('R', 'P', 'U', 'C')
   ) LOOP
     BEGIN
       EXECUTE IMMEDIATE 'ALTER TABLE "' || cons.table_name || '" DROP CONSTRAINT "' || cons.constraint_name || '" CASCADE';
@@ -15,15 +18,18 @@ BEGIN
     END;
   END LOOP;
 
-  -- 2️⃣ Apoi ștergem toate celelalte obiecte din schemă
+  DBMS_OUTPUT.PUT_LINE('Toate constrângerile au fost procesate.');
+
+  -- 2️⃣ Ștergem toate celelalte obiecte (inclusiv PACKAGE BODY)
   FOR obj IN (
     SELECT object_type, object_name
     FROM all_objects
     WHERE owner = UPPER('TECH_HUNTER_DB_OWNER')
       AND object_type IN (
-        'TABLE', 'VIEW', 'SEQUENCE', 'TRIGGER', 'PROCEDURE', 'FUNCTION',
-        'PACKAGE', 'PACKAGE BODY', 'SYNONYM', 'MATERIALIZED VIEW', 'TYPE'
+        'VIEW', 'MATERIALIZED VIEW', 'TRIGGER', 'PROCEDURE', 'FUNCTION',
+        'PACKAGE BODY', 'PACKAGE', 'SEQUENCE', 'SYNONYM', 'TYPE', 'TABLE'
       )
+    ORDER BY DECODE(object_type, 'TRIGGER', 1, 'VIEW', 2, 'TABLE', 3, 4) -- mică prioritate logică
   ) LOOP
     BEGIN
       EXECUTE IMMEDIATE 'DROP ' || obj.object_type || ' "' || obj.object_name || '"' ||
@@ -38,5 +44,7 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Eroare la ștergerea ' || obj.object_type || ' ' || obj.object_name || ': ' || SQLERRM);
     END;
   END LOOP;
+
+  DBMS_OUTPUT.PUT_LINE('===== Curătarea completă a fost finalizată =====');
 END;
 /
