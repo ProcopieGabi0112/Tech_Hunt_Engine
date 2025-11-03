@@ -31,11 +31,11 @@ CREATE TABLE tech_hunter_db_owner.lang_level (
   created_by            VARCHAR2(50) NOT NULL,
   last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   last_updated_by       VARCHAR2(50) NOT NULL,
-  source_system         VARCHAR2(20) DEFAULT 'cloud_env' NOT NULL,
-  sync_status           VARCHAR2(20) DEFAULT 'synced' NOT NULL,
+  source_system         VARCHAR2(20) DEFAULT 'cloud_env' NOT NULL CHECK (source_system IN ('cloud_env','postgress_env','mongo_env')),
+  sync_status           VARCHAR2(20) DEFAULT 'synced' NOT NULL CHECK (sync_status IN ('synced','not_synced')),
   sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
   last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL,
+  deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('Y','N')),
   CONSTRAINT uk_lang_level_id UNIQUE (lang_level_id),
   CONSTRAINT fk_lang_code
         FOREIGN KEY (lang_code)
@@ -172,5 +172,6 @@ EXCEPTION
 END;
 
 /
+
 
 
