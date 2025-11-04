@@ -1,17 +1,18 @@
 SET SERVEROUTPUT ON;
 BEGIN
-  DBMS_OUTPUT.PUT_LINE('===== Încep curătarea completă a schemei TECH_HUNTER_DB_OWNER =====');
+  DBMS_OUTPUT.PUT_LINE('===== DROP OBJECTS FROM TECH_HUNTER_DB_OWNER =====');
 
   -- 1️⃣ Ștergem mai întâi toate constrângerile (FK, PK, UNIQUE, CHECK)
   FOR cons IN (
     SELECT table_name, constraint_name
-    FROM all_constraints
+    FROM user_constraints
     WHERE owner = UPPER('TECH_HUNTER_DB_OWNER')
       AND constraint_type IN ('R', 'P', 'U', 'C')
+      AND table_name IN ( 'LANG_LEVEL')
   ) LOOP
     BEGIN
       EXECUTE IMMEDIATE 'ALTER TABLE "' || cons.table_name || '" DROP CONSTRAINT "' || cons.constraint_name || '" CASCADE';
-      DBMS_OUTPUT.PUT_LINE('Șters constraint ' || cons.constraint_name || ' din tabela ' || cons.table_name);
+      DBMS_OUTPUT.PUT_LINE('Delete  constraint ' || cons.constraint_name || ' din tabela ' || cons.table_name);
     EXCEPTION
       WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Eroare la ștergerea constraint ' || cons.constraint_name || ': ' || SQLERRM);
@@ -38,7 +39,7 @@ BEGIN
           WHEN 'TYPE' THEN ' FORCE'
           ELSE ''
         END;
-      DBMS_OUTPUT.PUT_LINE('Șters ' || obj.object_type || ' ' || obj.object_name);
+      DBMS_OUTPUT.PUT_LINE('Delete ' || obj.object_type || ' ' || obj.object_name);
     EXCEPTION
       WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Eroare la ștergerea ' || obj.object_type || ' ' || obj.object_name || ': ' || SQLERRM);
@@ -48,3 +49,4 @@ BEGIN
   DBMS_OUTPUT.PUT_LINE('===== Curătarea completă a fost finalizată =====');
 END;
 /
+
