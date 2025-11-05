@@ -99,9 +99,52 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[3.] The TRG_USER_LEVEL_TECH_COL trigger for technical columns was created.');
 
-DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
+--CREATE TRIGGER FOR RATING UPDATE
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_UPDATE_LANG_RATING';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER tech_hunter_db_owner.trg_update_lang_rating';
+END IF;
+
+--CREATE TRIGGER
+v_sql := q'[
+    CREATE OR REPLACE TRIGGER trg_update_lang_rating
+    AFTER INSERT OR UPDATE OR DELETE ON tech_hunter_db_owner.user_level
+    DECLARE
+        v_total NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_total FROM tech_hunter_db_owner.user_level;
+
+        FOR rec IN (
+            SELECT lang_level_id,
+                   ROUND(COUNT(*) * 100 / NULLIF(v_total, 0), 2) AS computed_rating
+            FROM tech_hunter_db_owner.user_level
+            GROUP BY lang_level_id
+        ) LOOP
+            UPDATE tech_hunter_db_owner.lang_level
+            SET rating = rec.computed_rating
+            WHERE lang_level_id = rec.lang_level_id;
+        END LOOP;
+    END;
+]';
+EXECUTE IMMEDIATE v_sql;
+
+--CHECK IF THE TRIGGER WAS CREATED
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_UPDATE_LANG_RATING';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20002,'The TRG_UPDATE_LANG_RATING trigger wasn''t created properly.');
+END IF;
+
+DBMS_OUTPUT.PUT_LINE('[4.] The TRG_UPDATE_LANG_RATING trigger for LANV_LEVEL rating update was created.');
+
+DBMS_OUTPUT.PUT_LINE('[5.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
+
 /
