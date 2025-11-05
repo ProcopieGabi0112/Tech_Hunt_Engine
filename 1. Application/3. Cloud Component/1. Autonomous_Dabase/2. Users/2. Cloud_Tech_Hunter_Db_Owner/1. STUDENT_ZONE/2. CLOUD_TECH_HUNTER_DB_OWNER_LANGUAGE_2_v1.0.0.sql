@@ -23,16 +23,17 @@ v_sql := q'[
           lang_code             NUMBER(38,0) PRIMARY KEY,
           name                  VARCHAR2(60) NOT NULL,
           iso_code              VARCHAR2(5) NOT NULL,
-          no_native_speakers    NUMBER(20,0) NOT NULL,
-          no_speakers           NUMBER(38,0) NOT NULL,
           no_countries          NUMBER(5,0) NOT NULL,
-          rating                NUMBER(5,2) GENERATED ALWAYS AS (
-                                  ROUND((
-                                    0.4 * LOG(10, no_native_speakers + 1) +
-                                    0.5 * LOG(10, no_speakers + 1) +
-                                    0.1 * SQRT(no_countries)
-                                  ) / 9.2 * 100, 2)
-                                ) VIRTUAL,
+          no_companies          NUMBER(20,0) NOT NULL,
+          no_native_speakers     NUMBER(20,0) NOT NULL,
+          no_speakers            NUMBER(38,0) NOT NULL,
+          rating NUMBER(5,2) GENERATED ALWAYS AS (
+                                                   ROUND((
+                                                           0.3 * SQRT(no_countries) +
+                                                           0.4 * LOG(10, no_companies + 1) +
+                                                           0.2 * LOG(10, no_native_speakers + 1) +
+                                                           0.1 * LOG(10, (no_speakers - no_native_speakers) + 1)
+                                                          ) / 9.4 * 100, 2) ) VIRTUAL,
           creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           created_by            VARCHAR2(50) NOT NULL,
           last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -167,5 +168,6 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
 
 
