@@ -36,7 +36,7 @@ CREATE TABLE tech_hunter_db_owner.lang_level (
   sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
   last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('Y','N')),
-  CONSTRAINT uk_lang_level_id UNIQUE (lang_level_id),
+  --CONSTRAINT uk_lang_level_id UNIQUE (lang_level_id),
   CONSTRAINT fk_lang_code
         FOREIGN KEY (lang_code)
         REFERENCES language(lang_code)
