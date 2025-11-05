@@ -46,11 +46,11 @@ v_sql := q'[
           created_by            VARCHAR2(50) NOT NULL,
           last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           last_updated_by       VARCHAR2(50) NOT NULL,
-          source_system         VARCHAR2(20) DEFAULT 'cloud_env' NOT NULL,
-          sync_status           VARCHAR2(20) DEFAULT 'synced' NOT NULL,
+          source_system         VARCHAR2(20) DEFAULT 'cloud_env' NOT NULL CHECK (source_system IN ('cloud_env','postgress_env','mongo_env')),
+          sync_status           VARCHAR2(20) DEFAULT 'synced' NOT NULL CHECK (sync_status IN ('synced','not_synced')),
           sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-          deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL,
+          deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')),
           CONSTRAINT fk_institution_id FOREIGN KEY (institution_id) REFERENCES institution(institution_id)
           ON DELETE CASCADE
 )
