@@ -66,6 +66,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.name IS ''The
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.iso_code IS ''The ISO code of the language''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.no_native_speakers IS ''The number of native speakers''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.no_speakers IS ''The number of speakers''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.no_companies IS ''The number of campanies that use this language''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.no_countries IS ''The number of countries where you can speak this language''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.rating IS ''The rating of this language, calculated based on speakers and country spread''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.creation_date IS ''Technical Column - The creation date of the record''';
@@ -168,6 +169,7 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
 
 
 
