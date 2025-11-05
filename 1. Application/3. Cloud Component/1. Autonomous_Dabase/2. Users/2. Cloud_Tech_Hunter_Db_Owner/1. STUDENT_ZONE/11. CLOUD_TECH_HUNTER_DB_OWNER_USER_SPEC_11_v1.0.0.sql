@@ -99,9 +99,49 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[3.] The TRG_USER_SPEC_TECH_COL trigger for technical columns was created.');
 
-DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
+--CREATE TRIGGER FOR RATING UPDATE ON INSTITUTION
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_UPDATE_INSTITUTION_RATING';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER tech_hunter_db_owner.trg_update_institution_rating';
+END IF;
+
+--CREATE TRIGGER
+v_sql := q'[
+    CREATE OR REPLACE TRIGGER trg_update_institution_rating
+    AFTER INSERT OR UPDATE OR DELETE ON tech_hunter_db_owner.specialization
+    DECLARE
+    BEGIN
+        FOR rec IN (
+            SELECT institution_id,
+                   ROUND(AVG(rating), 2) AS computed_rating
+            FROM tech_hunter_db_owner.specialization
+            GROUP BY institution_id
+        ) LOOP
+            UPDATE tech_hunter_db_owner.institution
+            SET rating = rec.computed_rating
+            WHERE institution_id = rec.institution_id;
+        END LOOP;
+    END;
+]';
+EXECUTE IMMEDIATE v_sql;
+
+--CHECK IF THE TRIGGER WAS CREATED
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_UPDATE_INSTITUTION_RATING';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20003,'The TRG_UPDATE_INSTITUTION_RATING trigger wasn''t created properly.');
+END IF;
+
+DBMS_OUTPUT.PUT_LINE('[4.] The TRG_UPDATE_INSTITUTION_RATING trigger for institution rating update was created.');
+
+DBMS_OUTPUT.PUT_LINE('[5.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
+
 /
