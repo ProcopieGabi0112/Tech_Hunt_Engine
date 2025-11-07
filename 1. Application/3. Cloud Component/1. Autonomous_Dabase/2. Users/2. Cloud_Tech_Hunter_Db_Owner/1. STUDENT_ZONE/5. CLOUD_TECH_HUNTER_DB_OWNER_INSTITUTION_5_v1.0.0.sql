@@ -21,11 +21,11 @@ END IF;
 v_sql := q'[
         CREATE TABLE tech_hunter_db_owner.institution (
           institution_id        NUMBER(38,0) PRIMARY KEY,
-          name                  VARCHAR2(100) NOT NULL,
+          name                  VARCHAR2(200) NOT NULL,
           website               VARCHAR2(250),
-          founding_date         DATE NOT NULL,
+          founding_year         VARCHAR2(4) NOT NULL,
           rating                NUMBER(5,2) DEFAULT 0 NOT NULL,
-          description           VARCHAR2(100),
+          description           VARCHAR2(250),
           creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           created_by            VARCHAR2(50) NOT NULL,
           last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -55,7 +55,7 @@ EXECUTE IMMEDIATE 'COMMENT ON TABLE tech_hunter_db_owner.institution IS ''The ta
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.institution.institution_id IS ''The primary key of the institution table''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.institution.name IS ''The name of the institution''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.institution.website IS ''The werbsite of the institution''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.institution.founding_date IS ''The founding date of the institution''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.institution.founding_year IS ''The founding year of the institution''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.institution.rating IS ''The rating of the institution''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.institution.description IS ''The description of the institution''';
 -- TECHNICAL COLUMNS COMMENT
@@ -159,3 +159,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
