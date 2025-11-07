@@ -26,7 +26,7 @@ CREATE TABLE tech_hunter_db_owner.lang_level (
   lang_code NUMBER(38,0) NOT NULL,
   validity_period NUMBER(3,0) DEFAULT 0,
   rating NUMBER(5,2) DEFAULT 0 NOT NULL,
-  description VARCHAR2(100),
+  description VARCHAR2(250),
   creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   created_by            VARCHAR2(50) NOT NULL,
   last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -172,6 +172,7 @@ EXCEPTION
 END;
 
 /
+
 
 
 
