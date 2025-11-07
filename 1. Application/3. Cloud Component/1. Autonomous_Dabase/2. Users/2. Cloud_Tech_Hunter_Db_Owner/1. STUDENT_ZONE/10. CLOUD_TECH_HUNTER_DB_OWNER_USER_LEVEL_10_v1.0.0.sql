@@ -19,8 +19,9 @@ END IF;
 --CREATE USER_LEVEL TABLE;
 v_sql := q'[
         CREATE TABLE tech_hunter_db_owner.user_level (
-		  email                 VARCHAR2(70) NOT NULL,
+		  user_id               NUMBER(38,0) NOT NULL,
           lang_level_id         NUMBER(38,0) NOT NULL,
+	      obtained_date         DATE NOT NULL,
 
           creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           created_by            VARCHAR2(50) NOT NULL,
@@ -31,8 +32,8 @@ v_sql := q'[
           sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')),
-          PRIMARY KEY (email, lang_level_id),
-          FOREIGN KEY (email) REFERENCES utilizatori(email),
+          PRIMARY KEY (user_id, lang_level_id),
+          FOREIGN KEY (user_id) REFERENCES utilizatori(user_id),
           FOREIGN KEY (lang_level_id) REFERENCES lang_level(lang_level_id)
 )
     ]';
@@ -51,7 +52,7 @@ DBMS_OUTPUT.PUT_LINE('[2.] The USER_LEVEL table was created.');
 -- TABLE COMMENT
 EXECUTE IMMEDIATE 'COMMENT ON TABLE  tech_hunter_db_owner.user_level IS ''The associative table between users and lang_level tables.''';
 -- BUSINESS COLUMNS COMMENT                              
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_level.email IS ''The primary key from utilizatori table''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_level.user_id IS ''The primary key from utilizatori table''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_level.lang_level_id IS ''The primary key from lang_level table''';
 -- TECHNICAL COLUMNS COMMENT                             
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_level.creation_date IS ''Technical Column - The creation date of the record''';
@@ -148,3 +149,4 @@ EXCEPTION
 END;
 
 /
+
