@@ -20,7 +20,7 @@ END IF;
 --CREATE EMAIL TABLE;
 v_sql := q'[
         CREATE TABLE tech_hunter_db_owner.user_role (
-		  email                 VARCHAR2(70) NOT NULL,
+		  user_id               NUMBER(38,0) NOT NULL,
           role_id               NUMBER(38,0) NOT NULL,
 
           creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -32,8 +32,8 @@ v_sql := q'[
           sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(5) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')),
-          PRIMARY KEY (email, role_id),
-          FOREIGN KEY (email) REFERENCES utilizatori(email),
+          PRIMARY KEY (user_id, role_id),
+          FOREIGN KEY (user_id) REFERENCES utilizatori(user_id),
           FOREIGN KEY (role_id) REFERENCES role(role_id)
 )
     ]';
@@ -52,7 +52,7 @@ DBMS_OUTPUT.PUT_LINE('[2.] The USER_ROLE table was created.');
 -- TABLE COMMENT
 EXECUTE IMMEDIATE 'COMMENT ON TABLE  tech_hunter_db_owner.user_role IS ''The associative table between users and user roles.''';
 -- BUSINESS COLUMNS COMMENT                              
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_role.email IS ''The primary key from utilizatori table''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_role.user_id IS ''The primary key from utilizatori table''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_role.role_id IS ''The primary key from role table''';
 -- TECHNICAL COLUMNS COMMENT                             
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.user_role.creation_date IS ''Technical Column - The creation date of the record''';
@@ -105,4 +105,5 @@ EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
+
 /
