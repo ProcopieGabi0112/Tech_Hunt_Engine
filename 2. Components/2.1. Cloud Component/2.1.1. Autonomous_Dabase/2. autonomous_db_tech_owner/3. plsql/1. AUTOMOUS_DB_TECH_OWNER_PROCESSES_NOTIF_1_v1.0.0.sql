@@ -37,7 +37,7 @@ v_sql := q'[
         CREATE TABLE autonomous_db_tech_owner.processes_notif (
 
           process_id           VARCHAR2(200) PRIMARY KEY,
-          process_name         VARCHAR2(50) NOT NULL,
+          process_name         VARCHAR2(100) NOT NULL,
           process_date         VARCHAR2(10) NOT NULL,
           process_type         VARCHAR2(30) NOT NULL,
           start_timestamp      TIMESTAMP NOT NULL,
