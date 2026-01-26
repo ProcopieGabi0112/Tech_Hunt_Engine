@@ -16,3 +16,6 @@ User Admin Cloud Database
 ADMIN
 Gabriel#01121997
 
+User Admin Cloud DataWarehouse
+ADMIN
+Teodora@220398
