@@ -12,6 +12,7 @@ Customer type individual
 Home Region France Central(Paris)
 Cloud Account Name procopiegabi
 
-User Admin Cloud 
+User Admin Cloud Database
 ADMIN
 Gabriel#01121997
+
