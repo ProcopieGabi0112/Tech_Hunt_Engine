@@ -43,7 +43,9 @@ BEGIN
                  ROUND(used_space * block_size / 1024 / 1024) AS used_mb,
                  ROUND((tablespace_size - used_space) * block_size / 1024 / 1024) AS free_mb,
                  ROUND(tablespace_size * block_size / 1024 / 1024) AS total_mb
-          FROM dba_tablespace_usage_metrics;
+          FROM dba_tablespace_usage_metrics
+          WHERE tablespace_name = 'DATA'
+          AND total_mb > 0;
       BEGIN
         FOR r IN c_ts LOOP
           INSERT INTO autonomous_db_tech_owner.resources_notif (
@@ -96,3 +98,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
