@@ -72,7 +72,7 @@ BEGIN
       END;
     !',
     start_date      => SYSTIMESTAMP,
-    repeat_interval => 'FREQ=HOURLY; INTERVAL=5',
+    repeat_interval => 'FREQ=HOURLY; INTERVAL=1',
     enabled         => TRUE
   );
 END;
@@ -97,5 +97,6 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
 
 
