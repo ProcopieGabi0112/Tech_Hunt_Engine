@@ -47,7 +47,7 @@ BEGIN
       BEGIN
         -- Ștergere date vechi
         DELETE FROM autonomous_db_tech_owner.resources_notif
-        WHERE creation_date < ADD_MONTHS(SYSTIMESTAMP, -3)
+        WHERE creation_date < SYSTIMESTAMP - 7
         RETURNING COUNT(*) INTO v_deleted;
 
         -- Momentul final al execuției
@@ -133,3 +133,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
