@@ -124,7 +124,7 @@ IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The JOB_CLEAN_RESOURCES_NOTIF job wasnt created properly.');
 END IF;
 
-DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_RESOURCES_NOTIF cleanup job was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_RESOURCES_NOTIF job was created.');
 
 
   DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
@@ -133,4 +133,5 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
 
