@@ -107,7 +107,7 @@ BEGIN
     start_date      => SYSTIMESTAMP,
     repeat_interval => 'FREQ=DAILY; BYHOUR=3; BYMINUTE=0; BYSECOND=0',
     enabled         => TRUE,
-    comments        => 'Deletes records older than 3 months from RESOURCES_NOTIF and logs execution'
+    comments        => 'Deletes records older than one week from RESOURCES_NOTIF and logs execution'
   );
 END;
 ]';
@@ -133,5 +133,6 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
 
 
