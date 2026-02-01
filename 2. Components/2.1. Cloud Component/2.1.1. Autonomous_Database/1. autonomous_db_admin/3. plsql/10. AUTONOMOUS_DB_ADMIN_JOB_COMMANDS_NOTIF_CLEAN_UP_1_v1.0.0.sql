@@ -81,7 +81,7 @@ BEGIN
           v_end_ts := SYSTIMESTAMP;
 
         -- Log ERROR
-        INSERT INTO autonomous_db_tech_owner.commands_notif (
+        INSERT INTO autonomous_db_tech_owner.process_notif (
           process_name,
           process_date,
           process_type,
