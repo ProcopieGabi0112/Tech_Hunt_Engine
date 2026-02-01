@@ -36,18 +36,18 @@ END IF;
 v_sql := q'[
         CREATE TABLE autonomous_db_tech_owner.processes_notif (
 
-          process_id           VARCHAR2(200) PRIMARY KEY,
+          notification_id      VARCHAR2(200) PRIMARY KEY,
           process_name         VARCHAR2(100) NOT NULL,
           process_date         VARCHAR2(10) NOT NULL,
           process_type         VARCHAR2(30) NOT NULL,
           start_timestamp      TIMESTAMP NOT NULL,
           end_timestamp        TIMESTAMP NOT NULL,
-          status               VARCHAR2(10) NOT NULL CHECK (status IN ('IN_PROGRESS','ERROR','DONE')),
+          status               VARCHAR2(30) NOT NULL CHECK (status IN ('IN_PROGRESS','ERROR','DONE')),
           error_message        VARCHAR2(250),
           admin_user           VARCHAR2(50) NOT NULL,
 
           creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-          created_by            VARCHAR2(50) NOT NULL,
+          created_by            VARCHAR2(50) NOT NULL, 
           source_system         VARCHAR2(20) DEFAULT 'db_env' NOT NULL CHECK (source_system IN ('db_env','dw_env','pg_env'))
         )
     ]';
@@ -64,9 +64,9 @@ END IF;
 DBMS_OUTPUT.PUT_LINE('[3.] The PROCESSES_NOTIF table was created.');
 --CREATE COMMENTS FROM TABLE AND COLUMNS
 -- TABLE COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_tech_owner.processes_notif IS ''The table contains the informations about processes that bring data into this schema.''';
+EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_tech_owner.processes_notif IS ''The table contains the informations about the notifications that will be display when a process will start.''';
 -- BUSINESS COLUMNS COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_notif.process_id IS ''The id of the process.''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_notif.notification_id IS ''The id of the process.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_notif.process_name IS ''The name of the process.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_notif.process_date IS ''The date when the process was started.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_notif.process_type IS ''The type of the process.''';
@@ -118,9 +118,9 @@ CREATE OR REPLACE TRIGGER trg_processes_notif_pk
 BEFORE INSERT ON autonomous_db_tech_owner.processes_notif
 FOR EACH ROW
 BEGIN
-   IF :NEW.process_id IS NULL OR TRIM(:NEW.process_id) = '' THEN
+   IF :NEW.notification_id IS NULL OR TRIM(:NEW.notification_id) = '' THEN
       SELECT TO_CHAR(seq_processes_notif_pk.NEXTVAL)
-      INTO :NEW.process_id
+      INTO :NEW.notification_id
       FROM dual;
    END IF;
 END;
