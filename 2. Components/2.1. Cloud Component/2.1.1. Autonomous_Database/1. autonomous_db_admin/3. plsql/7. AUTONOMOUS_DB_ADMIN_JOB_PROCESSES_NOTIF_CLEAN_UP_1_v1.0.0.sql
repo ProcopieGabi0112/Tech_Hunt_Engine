@@ -48,7 +48,8 @@ BEGIN
         -- Ștergere date vechi
         DELETE FROM autonomous_db_tech_owner.processes_notif
         WHERE creation_date < ADD_MONTHS(SYSTIMESTAMP, -3)
-        RETURNING COUNT(*) INTO v_deleted;
+         
+         v_deleted := SQL%ROWCOUNT;
 
         -- Momentul final al execuției
         v_end_ts := SYSTIMESTAMP;
