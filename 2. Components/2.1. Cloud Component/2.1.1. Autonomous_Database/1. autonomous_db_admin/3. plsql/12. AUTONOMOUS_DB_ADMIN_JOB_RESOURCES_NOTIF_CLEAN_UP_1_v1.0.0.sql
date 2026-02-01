@@ -47,14 +47,14 @@ BEGIN
       BEGIN
         -- Ștergere date vechi
         DELETE FROM autonomous_db_tech_owner.resources_notif
-        WHERE creation_date < SYSTIMESTAMP - 7
+        WHERE creation_date < SYSTIMESTAMP - 3
         RETURNING COUNT(*) INTO v_deleted;
 
         -- Momentul final al execuției
         v_end_ts := SYSTIMESTAMP;
 
         -- Logăm execuția jobului în tabela de notificări
-        INSERT INTO autonomous_db_tech_owner.resources_notif (
+        INSERT INTO autonomous_db_tech_owner.processes_notif (
           process_name,
           process_date,
           process_type,
@@ -64,13 +64,13 @@ BEGIN
           error_message,
           admin_user
         ) VALUES (
-          'JOB_CLEAN_RESOURCES_NOTIF',
+          'CLEAN_UP_RESOURCES_NOTIF_PROCESS',
           TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
           'CLEAN_UP',
           v_start_ts,
           v_end_ts,
           'SUCCES',
-          'Deleted ' || v_deleted || ' rows older that was 3 months older',
+          'Deleted ' || v_deleted || ' rows older that was 3 days older',
           'AUTONOMOUS_DATABASE_SYSTEM'
        );
 
@@ -107,7 +107,7 @@ BEGIN
     start_date      => SYSTIMESTAMP,
     repeat_interval => 'FREQ=DAILY; BYHOUR=3; BYMINUTE=0; BYSECOND=0',
     enabled         => TRUE,
-    comments        => 'Deletes records older than one week from RESOURCES_NOTIF and logs execution'
+    comments        => 'Deletes records older than 3 days from RESOURCES_NOTIF and logs execution'
   );
 END;
 ]';
@@ -124,7 +124,7 @@ IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The JOB_CLEAN_RESOURCES_NOTIF job wasnt created properly.');
 END IF;
 
-DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_RESOURCES_NOTIF job was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_RESOURCES_NOTIF cleanup job was created.');
 
 
   DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
@@ -133,6 +133,3 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
-
-
-
