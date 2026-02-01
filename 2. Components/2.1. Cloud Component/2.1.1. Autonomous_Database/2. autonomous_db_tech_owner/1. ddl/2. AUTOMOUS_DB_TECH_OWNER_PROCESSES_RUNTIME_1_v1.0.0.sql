@@ -114,6 +114,7 @@ v_sql := '  CREATE OR REPLACE TRIGGER trg_processes_runtime_tech_col
                  IF INSERTING THEN
                     :NEW.created_by := USER;
                     :NEW.creation_date := CURRENT_TIMESTAMP;
+                    :NEW.last_updated_by := USER;
                  END IF;
                  IF UPDATING THEN
                     :NEW.last_updated_by := USER;
