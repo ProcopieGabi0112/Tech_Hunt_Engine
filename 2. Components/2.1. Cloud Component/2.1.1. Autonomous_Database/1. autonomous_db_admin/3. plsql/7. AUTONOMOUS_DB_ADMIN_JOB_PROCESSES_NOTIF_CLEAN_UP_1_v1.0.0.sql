@@ -41,69 +41,38 @@ BEGIN
     job_type        => 'PLSQL_BLOCK',
     job_action      => q'{
       DECLARE
-        v_start_ts   TIMESTAMP := SYSTIMESTAMP;
-        v_end_ts     TIMESTAMP;
-        v_deleted    NUMBER;
-      BEGIN
-        -- Ștergere date vechi
-        DELETE FROM autonomous_db_tech_owner.processes_notif
-        WHERE creation_date < ADD_MONTHS(SYSTIMESTAMP, -3)
-         
-         v_deleted := SQL%ROWCOUNT;
+    v_start_ts   TIMESTAMP := SYSTIMESTAMP;
+    v_end_ts     TIMESTAMP;
+    v_deleted    NUMBER;
+BEGIN
+    DELETE FROM autonomous_db_tech_owner.processes_notif
+    WHERE creation_date < ADD_MONTHS(SYSTIMESTAMP, -3);
 
-        -- Momentul final al execuției
-        v_end_ts := SYSTIMESTAMP;
+    v_deleted := SQL%ROWCOUNT;
+    v_end_ts := SYSTIMESTAMP;
 
-        -- Logăm execuția jobului în tabela de notificări
-        INSERT INTO autonomous_db_tech_owner.processes_notif (
-          process_name,
-          process_date,
-          process_type,
-          start_timestamp,
-          end_timestamp,
-          status,
-          error_message,
-          admin_user
-        ) VALUES (
-          'JOB_CLEAN_PROCESSES_NOTIF',
-          TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
-          'CLEAN_UP',
-          v_start_ts,
-          v_end_ts,
-          'SUCCES',
-          'Deleted ' || v_deleted || ' rows older that was 3 months older',
-          'AUTONOMOUS_DATABASE_SYSTEM'
-       );
+    INSERT INTO autonomous_db_tech_owner.processes_notif (
+      process_name,
+      process_date,
+      process_type,
+      start_timestamp,
+      end_timestamp,
+      status,
+      error_message,
+      admin_user
+    ) VALUES (
+      'JOB_CLEAN_PROCESSES_NOTIF',
+      TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
+      'CLEAN_UP',
+      v_start_ts,
+      v_end_ts,
+      'DONE',
+      'Deleted ' || v_deleted || ' rows older than 3 months',
+      'AUTONOMOUS_DATABASE_SYSTEM'
+    );
 
-        COMMIT;
-
-        EXCEPTION
-        WHEN OTHERS THEN
-          v_end_ts := SYSTIMESTAMP;
-
-        -- Log ERROR
-        INSERT INTO autonomous_db_tech_owner.processes_notif (
-          process_name,
-          process_date,
-          process_type,
-          start_timestamp,
-          end_timestamp,
-          status,
-          error_message,
-          admin_user
-        ) VALUES (
-          'JOB_CLEAN_PROCESSES_NOTIF',
-          TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
-          'CLEAN_UP',
-          v_start_ts,
-          v_end_ts,
-          'ERROR',
-          SUBSTR(SQLERRM, 1, 250),
-          'AUTONOMOUS_DATABASE_SYSTEM'
-       );
     COMMIT;
-
-    END;
+END;
     }',
     start_date      => SYSTIMESTAMP,
     repeat_interval => 'FREQ=DAILY; BYHOUR=3; BYMINUTE=0; BYSECOND=0',
