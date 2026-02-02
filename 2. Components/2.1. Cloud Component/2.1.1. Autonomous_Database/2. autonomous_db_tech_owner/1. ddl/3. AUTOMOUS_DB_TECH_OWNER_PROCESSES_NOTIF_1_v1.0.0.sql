@@ -41,7 +41,7 @@ v_sql := q'[
           process_date         VARCHAR2(10) NOT NULL,
           process_type         VARCHAR2(30) NOT NULL,
           start_timestamp      TIMESTAMP NOT NULL,
-          end_timestamp        TIMESTAMP NOT NULL,
+          end_timestamp        TIMESTAMP,
           status               VARCHAR2(30) NOT NULL CHECK (status IN ('IN_PROGRESS','ERROR','DONE')),
           error_message        VARCHAR2(250),
           admin_user           VARCHAR2(50) NOT NULL,
@@ -170,3 +170,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
