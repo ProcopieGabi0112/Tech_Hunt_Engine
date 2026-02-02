@@ -59,6 +59,16 @@ BEGIN
           SELECT sid, serial#, username, machine, program, status
           FROM gv$session
           WHERE username IS NOT NULL
+          AND type = 'USER'
+          AND username NOT IN ('SYS', 'SYSTEM', 'PDBADMIN')
+          AND machine NOT LIKE '%oracle%'
+          AND machine NOT LIKE '%vcn%'
+          AND machine NOT LIKE '%adw%'
+          AND machine NOT LIKE '%subnet%'
+          AND program NOT LIKE '%JDBC%'
+          AND program NOT LIKE '%(SYS)%'
+          AND program NOT LIKE '%(PDBADMIN)%'
+
         ) LOOP
           i := i + 1;
           v_sessions(i).sid      := r.sid;
@@ -136,3 +146,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
