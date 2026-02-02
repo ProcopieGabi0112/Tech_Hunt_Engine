@@ -41,7 +41,7 @@ v_sql := q'[
           parent_process NUMBER(38,0),
           execution_mode VARCHAR2(20) DEFAULT 'SEQUENTIAL' NOT NULL CHECK (execution_mode IN ('PARALLEL','SEQUENTIAL')),
           run_order NUMBER(38,0) NOT NULL,
-          start_time VARCHAR2(50),
+          frequency VARCHAR2(50),
           start_condition VARCHAR2(2000),
           expected_rows NUMBER(5,0),
           waiting_time NUMBER(15,0),
@@ -137,3 +137,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
