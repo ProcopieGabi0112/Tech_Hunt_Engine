@@ -37,7 +37,7 @@ v_sql := q'[
         CREATE TABLE autonomous_db_tech_owner.processes_runtime (
           process_code NUMBER(38,0) PRIMARY KEY,
           process_name VARCHAR2(200) NOT NULL,
-          process_type VARCHAR2(30) NOT NULL CHECK (process_type IN ('GROUP','PROCESS','JOB')),
+          process_type VARCHAR2(30) NOT NULL,
           parent_process NUMBER(38,0),
           execution_mode VARCHAR2(20) DEFAULT 'SEQUENTIAL' NOT NULL CHECK (execution_mode IN ('PARALLEL','SEQUENTIAL')),
           run_order NUMBER(38,0) NOT NULL,
@@ -81,7 +81,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.parent_process IS ''The code of the parent process.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.execution_mode IS ''The execution mode of the process.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.run_order IS ''The run order of the process.''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.start_time IS ''The start time of the process.''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.frequency IS ''The start time of the process.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.start_condition IS ''The start condition of the process.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.expected_rows IS ''The expected rows from the start condition of the process.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_tech_owner.processes_runtime.waiting_time IS ''The number of seconds that the process wait to start condition to complete.''';
@@ -137,4 +137,5 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
 
