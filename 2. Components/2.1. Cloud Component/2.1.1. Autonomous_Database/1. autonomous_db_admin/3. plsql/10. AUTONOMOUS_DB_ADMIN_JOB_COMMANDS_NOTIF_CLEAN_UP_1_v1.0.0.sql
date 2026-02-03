@@ -28,86 +28,122 @@ IF v_count = 0 THEN
 --DELETE JOB IF EXISTS
 SELECT COUNT(*) INTO v_count
 FROM user_scheduler_jobs
-WHERE job_name = 'JOB_CLEAN_COMMANDS_NOTIF';
+WHERE job_name = 'JOB_CLEAN_UP_COMMANDS_NOTIF';
 IF v_count > 0 THEN
-    DBMS_SCHEDULER.DROP_JOB('JOB_CLEAN_COMMANDS_NOTIF', FORCE => TRUE);
+    DBMS_SCHEDULER.DROP_JOB('JOB_CLEAN_UP_COMMANDS_NOTIF', FORCE => TRUE);
 END IF;
 
 --CREATE JOB
 v_sql := q'[
 BEGIN
   DBMS_SCHEDULER.create_job (
-    job_name        => 'JOB_CLEAN_COMMANDS_NOTIF',
+    job_name        => 'JOB_CLEAN_UP_COMMANDS_NOTIF',
     job_type        => 'PLSQL_BLOCK',
     job_action      => q'{
       DECLARE
         v_start_ts   TIMESTAMP := SYSTIMESTAMP;
-        v_end_ts     TIMESTAMP;
-        v_deleted    NUMBER;
+        v_end_ts TIMESTAMP;
+        v_deleted NUMBER := 0;
+        v_exists NUMBER := 0;
+        v_error_msg VARCHAR2(4000);
       BEGIN
-        -- Ștergere date vechi
-        DELETE FROM autonomous_db_tech_owner.commands_notif
-        WHERE creation_date < ADD_MONTHS(SYSTIMESTAMP, -3)
-        RETURNING COUNT(*) INTO v_deleted;
+        ---------------------------------------------- 
+        -- 1. Verificăm dacă există rânduri de șters 
+        ----------------------------------------------
+        SELECT COUNT(*) INTO v_exists 
+        FROM autonomous_db_tech_owner.commands_notif 
+        WHERE creation_date < SYSTIMESTAMP - INTERVAL '7' DAY;
+        ------------------------------------------------------
+        -- 2. Dacă nu există → SKIP complet (fără notificări) 
+        ------------------------------------------------------
+        IF v_exists = 0 THEN 
+             RETURN; 
+        END IF;
+        -------------------------------
+        -- 3. Notification IN_PROGRESS 
+        ------------------------------- 
+        INSERT INTO autonomous_db_tech_owner.processes_notif 
+        (process_name, 
+         process_date, 
+         process_type, 
+         start_timestamp, 
+         status, 
+         admin_user 
+         ) VALUES ( 
+         'COMMANDS_NOTIF_CLEAN_UP_PROCESS', 
+         TO_CHAR(SYSDATE, 'YYYY-MM-DD'), 
+         'CLEAN_UP', 
+         v_start_ts, 
+         'IN_PROGRESS', 
+         'AUTONOMOUS_DATABASE_SYSTEM'); 
 
-        -- Momentul final al execuției
-        v_end_ts := SYSTIMESTAMP;
+         COMMIT;
+         -------------------- 
+         -- 4. Cleanup logic 
+         -------------------- 
+         DELETE FROM autonomous_db_tech_owner.commands_notif 
+         WHERE creation_date < SYSTIMESTAMP - INTERVAL '7' DAY;
 
-        -- Logăm execuția jobului în tabela de notificări
-        INSERT INTO autonomous_db_tech_owner.commands_notif (
-          process_name,
-          process_date,
-          process_type,
-          start_timestamp,
-          end_timestamp,
-          status,
-          error_message,
-          admin_user
-        ) VALUES (
-          'JOB_CLEAN_COMMANDS_NOTIF',
-          TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
-          'CLEAN_UP',
-          v_start_ts,
-          v_end_ts,
-          'SUCCES',
-          'Deleted ' || v_deleted || ' rows older that was 3 months older',
-          'AUTONOMOUS_DATABASE_SYSTEM'
-       );
+         v_deleted := SQL%ROWCOUNT; 
+         v_end_ts := SYSTIMESTAMP;
+         ------------------------- 
+         -- 5. Notification DONE 
+         -------------------------
+         INSERT INTO autonomous_db_tech_owner.processes_notif 
+         (process_name, 
+          process_date, 
+          process_type, 
+          start_timestamp, 
+          end_timestamp, 
+          status, 
+          error_message, 
+          admin_user 
+          ) VALUES ( 
+          'COMMANDS_NOTIF_CLEAN_UP_PROCESS', 
+          TO_CHAR(SYSDATE, 'YYYY-MM-DD'), 
+          'CLEAN_UP', 
+          v_start_ts, 
+          v_end_ts, 
+          'DONE', 
+          'Deleted ' || v_deleted || ' rows older than 1 week', 
+          'AUTONOMOUS_DATABASE_SYSTEM'); 
+           
+          COMMIT;
 
-        COMMIT;
+       EXCEPTION 
+          WHEN OTHERS THEN 
+               v_end_ts := SYSTIMESTAMP; 
+               v_error_msg := SUBSTR(SQLERRM, 1, 3500);
+               -------------------------- 
+               -- 6. Notification ERROR 
+               --------------------------
+               INSERT INTO autonomous_db_tech_owner.processes_notif 
+               (process_name, 
+                process_date, 
+                process_type, 
+                start_timestamp, 
+                end_timestamp, 
+                status, 
+                error_message, 
+                admin_user 
+               ) VALUES ( 
+                'COMMANDS_NOTIF_CLEAN_UP_PROCESS',
+                TO_CHAR(SYSDATE, 'YYYY-MM-DD'), 
+                'CLEAN_UP', 
+                v_start_ts, 
+                v_end_ts, 
+                'ERROR', 
+                v_error_msg, 
+               'AUTONOMOUS_DATABASE_SYSTEM'); 
+                COMMIT; 
+                RAISE;
 
-        EXCEPTION
-        WHEN OTHERS THEN
-          v_end_ts := SYSTIMESTAMP;
-
-        -- Log ERROR
-        INSERT INTO autonomous_db_tech_owner.process_notif (
-          process_name,
-          process_date,
-          process_type,
-          start_timestamp,
-          end_timestamp,
-          status,
-          error_message,
-          admin_user
-        ) VALUES (
-          'JOB_CLEAN_COMMANDS_NOTIF',
-          TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
-          'CLEAN_UP',
-          v_start_ts,
-          v_end_ts,
-          'ERROR',
-          SUBSTR(SQLERRM, 1, 250),
-          'AUTONOMOUS_DATABASE_SYSTEM'
-       );
-    COMMIT;
-
-    END;
+END;
     }',
     start_date      => SYSTIMESTAMP,
     repeat_interval => 'FREQ=DAILY; BYHOUR=3; BYMINUTE=0; BYSECOND=0',
     enabled         => TRUE,
-    comments        => 'Deletes records older than 3 months from COMMANDS_NOTIF and logs execution'
+    comments        => 'Deletes records older than 1 week from COMMANDS_NOTIF table'
   );
 END;
 ]';
@@ -117,13 +153,13 @@ EXECUTE IMMEDIATE v_sql;
 --VERIFY JOB
 SELECT COUNT(*) INTO v_count
 FROM user_scheduler_jobs
-WHERE job_name = 'JOB_CLEAN_COMMANDS_NOTIF';
+WHERE job_name = 'JOB_CLEAN_UP_COMMANDS_NOTIF';
 
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The JOB_CLEAN_COMMANDS_NOTIF job wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The JOB_CLEAN_UP_COMMANDS_NOTIF job wasnt created properly.');
 END IF;
 
-DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_COMMANDS_NOTIF cleanup job was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_UP_COMMANDS_NOTIF cleanup job was created.');
 
 
   DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
