@@ -47,7 +47,8 @@ EXECUTE IMMEDIATE q'[
                ROUND(used_space * block_size / 1024 / 1024) AS used_mb,
                ROUND((tablespace_size - used_space) * block_size / 1024 / 1024) AS free_mb,
                ROUND(tablespace_size * block_size / 1024 / 1024) AS total_mb
-        FROM dba_tablespace_usage_metrics;
+        FROM dba_tablespace_usage_metrics
+        WHERE UPPER(tablespace_name) = 'DATA';
     BEGIN
       --------------------------------------------------------------
       -- 1. Insert IN_PROGRESS notification
@@ -166,3 +167,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
