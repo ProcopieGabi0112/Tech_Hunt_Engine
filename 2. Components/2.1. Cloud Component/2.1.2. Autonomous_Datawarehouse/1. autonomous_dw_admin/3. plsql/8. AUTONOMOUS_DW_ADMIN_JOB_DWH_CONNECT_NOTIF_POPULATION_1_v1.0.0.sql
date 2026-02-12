@@ -106,7 +106,7 @@ BEGIN
               v_sessions(j).machine,
               'LOGIN',
               'AUTONOMOUS_DATAWAREHOUSE_SYSTEM',
-              'db_env'
+              'dw_env'
             );
           ELSIF v_sessions(j).status = 'INACTIVE' THEN
             UPDATE autonomous_dw_tech_owner.dwh_connect_notif
@@ -146,4 +146,5 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
 
