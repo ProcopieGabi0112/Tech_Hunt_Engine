@@ -28,16 +28,16 @@ IF v_count = 0 THEN
 --DELETE JOB IF EXISTS
 SELECT COUNT(*) INTO v_count
 FROM user_scheduler_jobs
-WHERE job_name = 'JOB_CLEAN_RESOURCES_NOTIF';
+WHERE job_name = 'JOB_CLEAN_UP_RESOURCES_NOTIF';
 IF v_count > 0 THEN
-    DBMS_SCHEDULER.DROP_JOB('JOB_CLEAN_RESOURCES_NOTIF', FORCE => TRUE);
+    DBMS_SCHEDULER.DROP_JOB('JOB_CLEAN_UP_RESOURCES_NOTIF', FORCE => TRUE);
 END IF;
 
 --CREATE JOB
 v_sql := q'[
 BEGIN
   DBMS_SCHEDULER.create_job (
-    job_name        => 'JOB_CLEAN_RESOURCES_NOTIF',
+    job_name        => 'JOB_CLEAN_UP_RESOURCES_NOTIF',
     job_type        => 'PLSQL_BLOCK',
     job_action      => q'{
       DECLARE
@@ -155,13 +155,13 @@ EXECUTE IMMEDIATE v_sql;
 --VERIFY JOB
 SELECT COUNT(*) INTO v_count
 FROM user_scheduler_jobs
-WHERE job_name = 'JOB_CLEAN_RESOURCES_NOTIF';
+WHERE job_name = 'JOB_CLEAN_UP_RESOURCES_NOTIF';
 
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The JOB_CLEAN_RESOURCES_NOTIF job wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The JOB_CLEAN_UP_RESOURCES_NOTIF job wasnt created properly.');
 END IF;
 
-DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_RESOURCES_NOTIF job was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The JOB_CLEAN_UP_RESOURCES_NOTIF job was created.');
 
 
   DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
@@ -170,3 +170,4 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
