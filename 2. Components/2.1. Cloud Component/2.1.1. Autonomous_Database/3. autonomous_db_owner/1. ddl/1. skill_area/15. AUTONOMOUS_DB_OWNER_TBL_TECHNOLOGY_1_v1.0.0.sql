@@ -36,7 +36,7 @@ END IF;
 v_sql := q'[
         CREATE TABLE autonomous_db_owner.technology (
           --business columns
-          technology_code	NUMBER(38,0),
+          technology_code	NUMBER(38,0) PRIMARY KEY,
           name	            VARCHAR2(100),
           release_date	    DATE,
           creator	        VARCHAR2(100),
