@@ -39,7 +39,7 @@ v_sql := q'[
           technology_type_code  NUMBER(38,0) PRIMARY KEY,
           name                  VARCHAR2(50) NOT NULL,
           rating                NUMBER(5,2) DEFAULT 0 NOT NULL,
-          description           VARCHAR2(200),
+          description           VARCHAR2(300),
           --technical columns
           creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           created_by            VARCHAR2(50) NOT NULL,
@@ -52,7 +52,9 @@ v_sql := q'[
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y'))
         )
     ]';
+ 
 EXECUTE IMMEDIATE v_sql;
+EXECUTE IMMEDIATE 'GRANT SELECT ON autonomous_db_owner.technology_type TO autonomous_db_out_owner';
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_tables
@@ -158,7 +160,7 @@ v_sql := '  CREATE OR REPLACE TRIGGER trg_technology_type_tech_col
                  END IF;
             END;';
 EXECUTE IMMEDIATE v_sql;
---CHECK IG THE TRiGGER WAS CREATED;
+--CHECK IF THE TRIGGER WAS CREATED;
 SELECT COUNT(*) INTO v_count
 FROM user_triggers
 WHERE trigger_name = 'TRG_TECHNOLOGY_TYPE_TECH_COL';

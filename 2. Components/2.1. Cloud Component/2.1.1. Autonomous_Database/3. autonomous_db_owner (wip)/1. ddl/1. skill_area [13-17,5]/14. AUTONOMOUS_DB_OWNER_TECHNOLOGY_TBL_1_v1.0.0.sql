@@ -1,4 +1,4 @@
---AUTONOMOUS_DB_OWNER_TBL_TECHNOLOGY_1_v1.0.0
+--AUTONOMOUS_DB_OWNER_TECHNOLOGY_TBL_1_v1.0.0
 --"TECHNOLOGY TABLE"
 SET SERVEROUTPUT ON;
 DECLARE
@@ -75,8 +75,6 @@ DBMS_OUTPUT.PUT_LINE('[3.] The TECHNOLOGY table was created.');
 EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_owner.technology IS ''This table will contains the technologies name like Postgress Database, Spring Boot, React Native, etc''';
 
 -- COLUMNS COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.technology.technology_code IS ''The code of the technology type''';
-
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.technology.technology_code IS ''The code of the technology''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.technology.name IS ''The name of the technology''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.technology.release_date IS ''The release date of the technology''';
@@ -193,6 +191,7 @@ END IF;
 v_sql := '  
         CREATE OR REPLACE TRIGGER trg_technology_type_rating_sync
         AFTER INSERT OR UPDATE OR DELETE ON autonomous_db_owner.technology
+        FOR EACH ROW
         DECLARE
             v_type_code NUMBER;
         BEGIN
