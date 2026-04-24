@@ -42,7 +42,7 @@ v_sql := q'[
           creator	        VARCHAR2(100),
           official_site	    VARCHAR2(255),
           rating	NUMBER(5,2) DEFAULT 0 NOT NULL,
-          description	VARCHAR2(250),
+          description	VARCHAR2(300),
           sign_photo	BLOB,
           technology_type_code	NUMBER(38,0) NOT NULL,
 
@@ -60,6 +60,7 @@ v_sql := q'[
         )
     ]';
 EXECUTE IMMEDIATE v_sql;
+EXECUTE IMMEDIATE 'GRANT SELECT ON autonomous_db_owner.technology TO autonomous_db_out_owner';
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_tables
@@ -190,42 +191,48 @@ END IF;
 --CREATE TRIGGER
 v_sql := '  
         CREATE OR REPLACE TRIGGER trg_technology_type_rating_sync
-        AFTER INSERT OR UPDATE OR DELETE ON autonomous_db_owner.technology
-        FOR EACH ROW
-        DECLARE
-            v_type_code NUMBER;
-        BEGIN
-            -- Determine affected technology_type_code
-            IF INSERTING THEN
-                v_type_code := :NEW.technology_type_code;
+FOR INSERT OR UPDATE OR DELETE ON autonomous_db_owner.technology
+COMPOUND TRIGGER
 
-            ELSIF UPDATING THEN
-                -- If type changed, recalc for old type
-                IF :OLD.technology_type_code != :NEW.technology_type_code THEN
-                    UPDATE autonomous_db_owner.technology_type tt
-                       SET tt.rating = (
-                           SELECT AVG(t.rating)
-                             FROM autonomous_db_owner.technology t
-                            WHERE t.technology_type_code = :OLD.technology_type_code
-                       )
-                     WHERE tt.technology_type_code = :OLD.technology_type_code;
-                END IF;
+    TYPE t_type_list IS TABLE OF NUMBER INDEX BY PLS_INTEGER;
+    g_types t_type_list;
+    g_idx   PLS_INTEGER := 0;
 
-                v_type_code := :NEW.technology_type_code;
+    BEFORE EACH ROW IS
+    BEGIN
+        IF INSERTING THEN
+            g_idx := g_idx + 1;
+            g_types(g_idx) := :NEW.technology_type_code;
 
-            ELSIF DELETING THEN
-                v_type_code := :OLD.technology_type_code;
+        ELSIF UPDATING THEN
+            IF :OLD.technology_type_code != :NEW.technology_type_code THEN
+                g_idx := g_idx + 1;
+                g_types(g_idx) := :OLD.technology_type_code;
             END IF;
 
-            -- Recalculate rating for current type
+            g_idx := g_idx + 1;
+            g_types(g_idx) := :NEW.technology_type_code;
+
+        ELSIF DELETING THEN
+            g_idx := g_idx + 1;
+            g_types(g_idx) := :OLD.technology_type_code;
+        END IF;
+    END BEFORE EACH ROW;
+
+    AFTER STATEMENT IS
+    BEGIN
+        FOR i IN g_types.FIRST .. g_types.LAST LOOP
             UPDATE autonomous_db_owner.technology_type tt
                SET tt.rating = (
                    SELECT AVG(t.rating)
-                     FROM autonomous_db_owner.technology t
-                    WHERE t.technology_type_code = v_type_code
+                   FROM autonomous_db_owner.technology t
+                   WHERE t.technology_type_code = g_types(i)
                )
-             WHERE tt.technology_type_code = v_type_code;
-        END;
+             WHERE tt.technology_type_code = g_types(i);
+        END LOOP;
+    END AFTER STATEMENT;
+
+END trg_technology_type_rating_sync;
     ';
 EXECUTE IMMEDIATE v_sql;
 --CHECK IG THE TRiGGER WAS CREATED;
