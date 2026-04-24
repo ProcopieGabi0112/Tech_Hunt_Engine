@@ -69,6 +69,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.no_speakers I
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.no_companies IS ''The number of campanies that use this language''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.no_countries IS ''The number of countries where you can speak this language''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.rating IS ''The rating of this language, calculated based on speakers and country spread''';
+
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.creation_date IS ''Technical Column - The creation date of the record''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.created_by IS ''Technical Column - The user who created the record''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN tech_hunter_db_owner.language.last_update_date IS ''Technical Column - The last update date of the record''';
