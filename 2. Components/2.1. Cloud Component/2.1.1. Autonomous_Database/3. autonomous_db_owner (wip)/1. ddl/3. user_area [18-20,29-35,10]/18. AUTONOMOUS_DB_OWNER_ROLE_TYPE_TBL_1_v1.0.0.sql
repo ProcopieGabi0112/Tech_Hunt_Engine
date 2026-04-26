@@ -1,5 +1,5 @@
 --AUTONOMOUS_DB_OWNER_ROLE_TBL_1_v1.0.0
---"TECHNOLOGY_TYPE TABLE"
+--"ROLE TABLE"
 SET SERVEROUTPUT ON;
 DECLARE
   v_count NUMBER;
@@ -23,7 +23,7 @@ IF v_count = 0 THEN
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDB"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE technology_type IF EXIST;
+--DELETE TABLE role IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_tables
 WHERE owner = 'AUTONOMOUS_DB_OWNER'
