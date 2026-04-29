@@ -36,6 +36,7 @@ v_sql := q'[
 CREATE OR REPLACE VIEW autonomous_db_out_owner.skill_v AS
 SELECT 
 skill_code,
+name,
 prerequisite_knowledge,
 learning_difficulty,
 implementation_difficulty,
