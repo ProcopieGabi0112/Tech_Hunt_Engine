@@ -190,7 +190,7 @@ IF v_count > 0 THEN
 END IF;
 --CREATE TRIGGER
 v_sql := '  
-        CREATE OR REPLACE TRIGGER trg_technology_type_rating_sync
+CREATE OR REPLACE TRIGGER trg_technology_type_rating_sync
 FOR INSERT OR UPDATE OR DELETE ON autonomous_db_owner.technology
 COMPOUND TRIGGER
 
