@@ -42,7 +42,7 @@ v_sql := q'[
           learning_difficulty NUMBER(5,2) NOT NULL,
           implementation_difficulty NUMBER(5,2) NOT NULL,
           cross_platform_applicability NUMBER(5,2) NOT NULL,
-          rating GENERATED ALWAYS AS (
+          rating NUMBER(5,2) GENERATED ALWAYS AS (
           ROUND(
                  0.35 * (prerequisite_knowledge) +
                  0.30 * (learning_difficulty) +
