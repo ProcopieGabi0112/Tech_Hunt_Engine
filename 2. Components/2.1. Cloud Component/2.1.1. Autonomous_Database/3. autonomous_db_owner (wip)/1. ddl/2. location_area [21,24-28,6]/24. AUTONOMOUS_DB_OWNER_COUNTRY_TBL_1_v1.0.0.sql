@@ -46,16 +46,18 @@ v_sql := q'[
           inflation_rate NUMBER (6,2) NOT NULL, 
           average_monthly_salary NUMBER(10,2) NOT NULL, 
           corporate_tax_rate NUMBER (5,2) NOT NULL, 
-          rating NUMBER(5,2) GENERATED ALWAYS AS (
+           
+    rating NUMBER(5,2) GENERATED ALWAYS AS (
     ROUND(
-          (
-                 0.30 * (1 - (unemployment_rate / 25)) +
-                 0.25 * (1 - (inflation_rate / 30)) +
-                 0.30 * LEAST(average_monthly_salary / 10000, 1) +
-                 0.15 * (1 - (corporate_tax_rate / 35))
-          ) * 100
-    ,2)
+        (
+            0.30 * GREATEST(1 - (unemployment_rate / 25), 0) +
+            0.25 * GREATEST(1 - (inflation_rate / 30), 0) +
+            0.30 * LEAST(average_monthly_salary / 10000, 1) +
+            0.15 * GREATEST(1 - (corporate_tax_rate / 35), 0)
+        ) * 100
+    , 2)
 ) VIRTUAL,
+
 
           region_id NUMBER(38,0), 
           official_lang_code NUMBER(38,0), 
