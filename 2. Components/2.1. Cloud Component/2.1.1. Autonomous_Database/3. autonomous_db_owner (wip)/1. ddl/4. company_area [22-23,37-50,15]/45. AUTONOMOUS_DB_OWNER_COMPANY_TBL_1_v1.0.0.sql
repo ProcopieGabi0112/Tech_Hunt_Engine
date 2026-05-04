@@ -1,0 +1,279 @@
+--AUTONOMOUS_DB_OWNER_COMPANY_TBL_1_v1.0.0
+--"COMPANY TABLE"
+SET SERVEROUTPUT ON;
+DECLARE
+  v_count NUMBER;
+  v_text  VARCHAR2(4000);
+  v_sql CLOB;
+BEGIN
+DBMS_OUTPUT.PUT_LINE('[1.] Script running...');
+
+--[1.] CHECK CURRENT USER AND SCHEMA
+SELECT COUNT(*) INTO v_count
+FROM dual
+WHERE sys_context('USERENV', 'SESSION_USER') = 'AUTONOMOUS_DB_OWNER'
+AND sys_context('USERENV', 'CON_NAME') = 'G90CE4847B77DFA_TECHHUNTENGINEDB' 
+AND sys_context('USERENV', 'DB_NAME') = 'G90CE4847B77DFA_TECHHUNTENGINEDB';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The environment is wrong. Please check the user.');
+  END IF;
+  DBMS_OUTPUT.PUT_LINE('[2.] The environment is preparing...');
+-- Current_User: "AUTONOMOUS_DB_OWNER"	
+-- Database_name: "G90CE4847B77DFA_TECHHUNTENGINEDB"	
+-- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDB"
+-- Database_Type: "Pluggable Database (PDB)"
+
+--DELETE TABLE company IF EXIST;
+SELECT COUNT(*) INTO v_count
+FROM all_tables
+WHERE owner = 'AUTONOMOUS_DB_OWNER'
+AND table_name = 'COMPANY'
+AND tablespace_name = 'DATA';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TABLE autonomous_db_owner.company CASCADE CONSTRAINTS';
+END IF;
+--CREATE COMPANY TABLE;
+employees_rating
+v_sql := q'[
+        CREATE TABLE autonomous_db_owner.company (
+
+          --business columns
+          company_id NUMBER(38,0)NOT NULL,
+          legal_entity_identifier VARCHAR2(50) NOT NULL,
+          name VARCHAR2(255) NOT NULL,
+          trade_register_number VARCHAR2(50) NOT NULL,
+          website VARCHAR2(255) NOT NULL,
+          foundation_date DATE NOT NULL,
+          no_employees NUMBER(15,0) NOT NULL, 
+          description VARCHAR2(200) NOT NULL,
+          sign_image BLOB,
+          profile_image BLOB,
+          share_capital NUMBER(15,2) NOT NULL,
+          net_profit NUMBER(15,0) NOT NULL,
+          average_annual_revenue NUMBER(15,0) NOT NULL,
+          total_assets NUMBER(15,0) NOT NULL,
+          total_liabilities NUMBER(15,0) NOT NULL,
+          debt_to_equity_ratio NUMBER(15,0) NOT NULL,
+          rating NUMBER(5,2) GENERATED ALWAYS AS (
+    LEAST(
+        GREATEST(
+            ROUND(
+                (
+
+                    /* 22% profitabilitate (normalizata 0�1) */
+                    0.22 * LEAST(
+                                GREATEST(
+                                    NVL(net_profit / NULLIF(average_annual_revenue, 0), 0),
+                                0),
+                            1) +
+
+                    /* 18% stabilitate financiara (normalizata 0�1) */
+                    0.18 * LEAST(
+                                GREATEST(
+                                    NVL((total_assets - total_liabilities) / NULLIF(total_assets, 0), 0),
+                                0),
+                            1) +
+
+                    /* 12% risc (1 - D/E ratio/10), bounded 0�1 */
+                    0.12 * LEAST(
+                                GREATEST(
+                                    1 - (NVL(debt_to_equity_ratio, 0) / 10),
+                                0),
+                            1) +
+
+                    /* 18% eficien?a opera?ionala (profit per employee / 1000), bounded 0�1 */
+                    0.18 * LEAST(
+                                GREATEST(
+                                    NVL(net_profit / NULLIF(no_employees, 0), 0) / 1000,
+                                0),
+                            1) +
+
+                    /* 15% capitalizare (normalizata 0�1) */
+                    0.15 * LEAST(
+                                GREATEST(
+                                    NVL(share_capital / NULLIF(total_assets, 0), 0),
+                                0),
+                            1) +
+
+                    /* 15% employees_rating (0�100 ? 0�1) */
+                    0.15 * LEAST(
+                                GREATEST(
+                                    NVL(employees_rating / 100, 0),
+                                0),
+                            1)
+
+                ) * 100,
+            2),
+        0),
+    100)
+) VIRTUAL,
+
+          user_id NUMBER(38,0) NOT NULL,
+          user_email VARCHAR2(70) NOT NULL, 
+          industry_type_id NUMBER(25,0) NOT NULL, 
+          company_type_id NUMBER(25,0) NOT NULL,
+          company_location_id NUMBER(38,0) NOT NULL,
+          currency_code NUMBER(38,0) NOT NULL,
+          
+          --technical columns
+          creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          created_by            VARCHAR2(50) NOT NULL,
+          last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          last_updated_by       VARCHAR2(50) NOT NULL,
+          source_system         VARCHAR2(20) DEFAULT 'db_env' NOT NULL CHECK (source_system IN ('db_env','dw_env','pg_env')),
+          sync_status           VARCHAR2(20) DEFAULT 'synced' NOT NULL CHECK (sync_status IN ('synced','not_synced')),
+          sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
+          last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
+
+          CONSTRAINT pk_company_table PRIMARY KEY (company_id, legal_entity_identifier),
+          CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
+          CONSTRAINT fk_user_email FOREIGN KEY (user_email) REFERENCES utilizatori (user_email),
+          CONSTRAINT fk_industry_type_id FOREIGN KEY (industry_type_id) REFERENCES industry_type (industry_type_id),
+          CONSTRAINT fk_company_type_id FOREIGN KEY (company_type_id) REFERENCES company_type (company_type_id),
+          CONSTRAINT fk_company_location_id FOREIGN KEY (company_location_id) REFERENCES location (location_id),
+          CONSTRAINT fk_currency_code FOREIGN KEY (currency_code) REFERENCES currency (currency_code)
+        )
+    ]';
+ 
+EXECUTE IMMEDIATE v_sql;
+EXECUTE IMMEDIATE 'GRANT SELECT ON autonomous_db_owner.company TO autonomous_db_out_owner';
+--[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
+SELECT COUNT(*) INTO v_count
+FROM all_tables
+WHERE owner = 'AUTONOMOUS_DB_OWNER'
+AND table_name = 'COMPANY'
+AND tablespace_name = 'DATA';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The COMPANY table wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[2.] The COMPANY table was created.');
+--CREATE COMMENTS FOR TABLE AND COLUMNS
+-- TABLE COMMENT
+EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_owner.company IS ''The table contains all the informations about the companies from application. Some posibile values like BCR,Thales, Ubisoft,etc''';
+
+-- COLUMNS COMMENT
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.company_id IS ''The id of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.legal_entity_identifier IS ''The id of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.name IS ''The name of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.trade_resiter_number IS ''The trade resiter number of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.website IS ''The website of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.foundation_date IS ''The foundation date of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.no_employees IS ''The number of employees of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.description IS ''The description of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.sign_image IS ''The sign image of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.profile_image IS ''The profile image of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.share_capital IS ''The share capital of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.net_profit IS ''The net profit of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.average_annual_revenue IS ''The average annual revenue of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.total_assets IS ''The total assets of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.total_liabilities IS ''The total liabilities of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.debt_ti_equity_ratio IS ''The debt to equity of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.rating IS ''The rating of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.user_id IS ''The id of the user who register the company into the application''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.user_email IS ''The email the user who register the company into the application''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.industry_type_id IS ''The industry type id of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.company_type_id IS ''The company type id of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.company_location_id IS ''The company location id of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.currency_code IS ''The currency code of the values used to resolve the rating value''';
+
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.creation_date IS ''Technical Column - The creation date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.created_by IS ''Technical Column - The user who created the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.last_update_date IS ''Technical Column - The last update date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.last_updated_by IS ''Technical Column - The user who updated the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.source_system IS ''Technical Column - The source system of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.sync_status IS ''Technical Column - The sync status of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.sync_version IS ''Technical Column - The sync version of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
+
+--CREATE SEQUENCE SEQ_COMPANY_ID FOR PRIMARY KEY
+--DELETE SEQUENCE IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_sequences
+WHERE sequence_name = 'SEQ_COMPANY_ID';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE autonomous_db_owner.seq_company_id';
+END IF;
+--CREATE SEQUENCE
+ EXECUTE IMMEDIATE '
+    CREATE SEQUENCE seq_company_id
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE
+  ';
+SELECT COUNT(*) INTO v_count
+FROM user_sequences
+WHERE sequence_name = 'SEQ_COMPANY_ID';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The SEQ_COMPANY_ID sequence wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[3.] The SEQ_COMPANY_ID sequence for primary key was created.');
+
+--CREATE TRIGGER FOR PRIMARY KEY;
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_COMPANY_ID_PK';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_company_id_pk';
+END IF;
+--CREATE TRIGGER
+v_sql := 'CREATE OR REPLACE TRIGGER trg_company_id_pk
+          BEFORE INSERT ON autonomous_db_owner.company
+          FOR EACH ROW
+          WHEN (NEW.company_id IS NULL)
+          BEGIN
+             SELECT seq_company_id.NEXTVAL INTO :NEW.company_id FROM dual;
+          END;';          
+EXECUTE IMMEDIATE v_sql;
+--CHECK IG THE TRiGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_COMPANY_ID_PK';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_COMPANY_ID_PK trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[4.] The TRG_COMPANY_ID_PK trigger for primary key was created.');
+--CREATE TRIGGER FOR TECHNICAL COLUMNS
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_COMPANY_TECH_COL';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_company_tech_col';
+END IF;
+--CREATE TRIGGER
+v_sql := '  CREATE OR REPLACE TRIGGER trg_company_tech_col
+            BEFORE INSERT OR UPDATE ON autonomous_db_owner.company
+            FOR EACH ROW
+            BEGIN
+                 IF INSERTING THEN
+                    :NEW.created_by := USER;
+                    :NEW.last_updated_by := USER;
+                    :NEW.creation_date := CURRENT_TIMESTAMP;
+                    :NEW.last_update_date := CURRENT_TIMESTAMP;
+                 END IF;
+
+                 IF UPDATING THEN
+                    :NEW.last_update_date := CURRENT_TIMESTAMP;
+                    :NEW.last_updated_by := USER;
+                 END IF;
+            END;';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_COMPANY_TECH_COL';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_COMPANY_TECH_COL trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[5.] The TRG_COMPANY_TECH_COL trigger for technical columns was created.');
+
+DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
+EXCEPTION
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
+END;
+/
