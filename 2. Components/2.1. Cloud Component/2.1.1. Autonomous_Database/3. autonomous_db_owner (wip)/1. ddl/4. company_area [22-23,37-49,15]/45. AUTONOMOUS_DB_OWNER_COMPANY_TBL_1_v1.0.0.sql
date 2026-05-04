@@ -33,7 +33,6 @@ IF v_count > 0 THEN
     EXECUTE IMMEDIATE 'DROP TABLE autonomous_db_owner.company CASCADE CONSTRAINTS';
 END IF;
 --CREATE COMPANY TABLE;
-employees_rating
 v_sql := q'[
         CREATE TABLE autonomous_db_owner.company (
 
@@ -60,45 +59,38 @@ v_sql := q'[
             ROUND(
                 (
 
-                    /* 22% profitabilitate (normalizata 0�1) */
-                    0.22 * LEAST(
+                    /* 25.88% profitabilitate (normalizata 0–1) */
+                    0.2588 * LEAST(
                                 GREATEST(
                                     NVL(net_profit / NULLIF(average_annual_revenue, 0), 0),
                                 0),
                             1) +
 
-                    /* 18% stabilitate financiara (normalizata 0�1) */
-                    0.18 * LEAST(
+                    /* 21.18% stabilitate financiara (normalizata 0–1) */
+                    0.2118 * LEAST(
                                 GREATEST(
                                     NVL((total_assets - total_liabilities) / NULLIF(total_assets, 0), 0),
                                 0),
                             1) +
 
-                    /* 12% risc (1 - D/E ratio/10), bounded 0�1 */
-                    0.12 * LEAST(
+                    /* 14.12% risc (1 - D/E ratio/10), bounded 0–1 */
+                    0.1412 * LEAST(
                                 GREATEST(
                                     1 - (NVL(debt_to_equity_ratio, 0) / 10),
                                 0),
                             1) +
 
-                    /* 18% eficien?a opera?ionala (profit per employee / 1000), bounded 0�1 */
-                    0.18 * LEAST(
+                    /* 21.18% eficiență operațională (profit per employee / 1000), bounded 0–1 */
+                    0.2118 * LEAST(
                                 GREATEST(
                                     NVL(net_profit / NULLIF(no_employees, 0), 0) / 1000,
                                 0),
                             1) +
 
-                    /* 15% capitalizare (normalizata 0�1) */
-                    0.15 * LEAST(
+                    /* 17.65% capitalizare (normalizata 0–1) */
+                    0.1765 * LEAST(
                                 GREATEST(
                                     NVL(share_capital / NULLIF(total_assets, 0), 0),
-                                0),
-                            1) +
-
-                    /* 15% employees_rating (0�100 ? 0�1) */
-                    0.15 * LEAST(
-                                GREATEST(
-                                    NVL(employees_rating / 100, 0),
                                 0),
                             1)
 
@@ -127,12 +119,12 @@ v_sql := q'[
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
 
           CONSTRAINT pk_company_table PRIMARY KEY (company_id, legal_entity_identifier),
-          CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
-          CONSTRAINT fk_user_email FOREIGN KEY (user_email) REFERENCES utilizatori (user_email),
-          CONSTRAINT fk_industry_type_id FOREIGN KEY (industry_type_id) REFERENCES industry_type (industry_type_id),
-          CONSTRAINT fk_company_type_id FOREIGN KEY (company_type_id) REFERENCES company_type (company_type_id),
-          CONSTRAINT fk_company_location_id FOREIGN KEY (company_location_id) REFERENCES location (location_id),
-          CONSTRAINT fk_currency_code FOREIGN KEY (currency_code) REFERENCES currency (currency_code)
+          CONSTRAINT fk_company_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
+          CONSTRAINT fk_company_user_email FOREIGN KEY (user_email) REFERENCES utilizatori (email),
+          CONSTRAINT fk_company_industry_type_id FOREIGN KEY (industry_type_id) REFERENCES industry_type (industry_type_id),
+          CONSTRAINT fk_company_company_type_id FOREIGN KEY (company_type_id) REFERENCES organization_type (company_type_id),
+          CONSTRAINT fk_company_company_location_id FOREIGN KEY (company_location_id) REFERENCES location (location_id),
+          CONSTRAINT fk_company_currency_code FOREIGN KEY (currency_code) REFERENCES currency (currency_code)
         )
     ]';
  
@@ -156,7 +148,7 @@ EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_owner.company IS ''The table c
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.company_id IS ''The id of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.legal_entity_identifier IS ''The id of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.name IS ''The name of the company''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.trade_resiter_number IS ''The trade resiter number of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.trade_register_number IS ''The trade register number of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.website IS ''The website of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.foundation_date IS ''The foundation date of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.no_employees IS ''The number of employees of the company''';
@@ -168,7 +160,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.net_profit IS '
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.average_annual_revenue IS ''The average annual revenue of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.total_assets IS ''The total assets of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.total_liabilities IS ''The total liabilities of the company''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.debt_ti_equity_ratio IS ''The debt to equity of the company''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.debt_to_equity_ratio IS ''The debt to equity of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.rating IS ''The rating of the company''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.user_id IS ''The id of the user who register the company into the application''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.company.user_email IS ''The email the user who register the company into the application''';

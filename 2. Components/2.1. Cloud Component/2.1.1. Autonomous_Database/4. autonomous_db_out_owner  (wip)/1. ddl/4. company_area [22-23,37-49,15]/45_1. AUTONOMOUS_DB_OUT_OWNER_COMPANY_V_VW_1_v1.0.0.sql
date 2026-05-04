@@ -74,13 +74,13 @@ EXECUTE IMMEDIATE v_sql;
 SELECT COUNT(*) INTO v_count
 FROM all_views
 WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
-AND view_name = 'COMPANY_v';
+AND view_name = 'COMPANY_V';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The COMPANY_v view wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The COMPANY_V view wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[2.] The COMPANY_v view was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The COMPANY_V view was created.');
 
-DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
+DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
