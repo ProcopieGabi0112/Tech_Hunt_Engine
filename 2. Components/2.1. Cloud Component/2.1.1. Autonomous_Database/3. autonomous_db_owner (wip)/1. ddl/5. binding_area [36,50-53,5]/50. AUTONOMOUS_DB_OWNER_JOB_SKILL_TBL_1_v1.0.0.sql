@@ -59,7 +59,7 @@ v_sql := q'[
 
           CONSTRAINT pk_job_skill_skill_code_job_id PRIMARY KEY (skill_code, job_id),
           CONSTRAINT fk_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
-          CONSTRAINT fk_technology_skill_code FOREIGN KEY (technology_skill_code) REFERENCES skill (skill_code)
+          CONSTRAINT fk_technology_skill_code FOREIGN KEY (skill_code) REFERENCES skill (skill_code)
         )
     ]';
  
@@ -81,7 +81,7 @@ EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_owner.job_skill IS ''The table
 
 -- COLUMNS COMMENT
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_skill.job_id IS ''The id of the job''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_skill.technology_skill_code IS ''The code of the technology skill''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_skill.skill_code IS ''The code of the technology skill''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_skill.required_level IS ''The required level of the technology skill''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_skill.importance_weight IS ''The importance weight of technology skill''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_skill.is_mandatory IS ''TThe flag indicating if the technology skill is mandatory or not''';

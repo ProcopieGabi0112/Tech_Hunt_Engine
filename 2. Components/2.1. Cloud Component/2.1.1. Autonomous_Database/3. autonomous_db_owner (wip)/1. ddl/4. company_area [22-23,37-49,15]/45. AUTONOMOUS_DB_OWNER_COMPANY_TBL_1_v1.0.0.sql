@@ -118,6 +118,7 @@ v_sql := q'[
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
 
+          CONSTRAINT uq_company_company_id UNIQUE (company_id),
           CONSTRAINT pk_company_table PRIMARY KEY (company_id, legal_entity_identifier),
           CONSTRAINT fk_company_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
           CONSTRAINT fk_company_user_email FOREIGN KEY (user_email) REFERENCES utilizatori (email),

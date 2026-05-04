@@ -23,7 +23,7 @@ IF v_count = 0 THEN
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDB"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE departament IF EXIST;
+--DELETE TABLE department IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_tables
 WHERE owner = 'AUTONOMOUS_DB_OWNER'
@@ -33,7 +33,6 @@ IF v_count > 0 THEN
     EXECUTE IMMEDIATE 'DROP TABLE autonomous_db_owner.department CASCADE CONSTRAINTS';
 END IF;
 --CREATE DEPARTMENT TABLE;
-employees_rating
 v_sql := q'[
         CREATE TABLE autonomous_db_owner.department (
 
@@ -50,65 +49,26 @@ v_sql := q'[
           training_budget NUMBER(15,2) NOT NULL,
           no_open_positions NUMBER(10,0),
           turnover_rate NUMBER(5,2) NOT NULL,
-
---RATING NUMBER GENERATED ALWAYS AS ( LEAST( GREATEST( ROUND( ( /* 20% eficiență bugetară */ 0.20 * NVL(1 - (operational_costs / NULLIF(annual_budget, 0)), 0) + /* 20% randament financiar */ 0.20 * NVL(revenue_generated / NULLIF(expenses, 0), 0) + /* 10% cost mediu per angajat (inversat) */ 0.10 * NVL(1 - (avg_salary / 10000), 0) + /* 15% potențial de creștere */ 0.15 * NVL(growth_potential / 100, 0) + /* 10% investiție în training */ 0.10 * NVL(training_budget / NULLIF(annual_budget, 0), 0) + /* 10% poziții deschise vs angajați */ 0.10 * NVL(1 - (no_open_positions / NULLIF(no_employees, 0)), 0) + /* 15% retenție (invers turnover) */ 0.15 * NVL(1 - (turnover_rate / 100), 0) ) * 100, 2), 0), 100) )
-        
-          rating NUMBER(5,2) GENERATED ALWAYS AS (
-    LEAST(
-        GREATEST(
-            ROUND(
-                (
-
-                    /* 22% profitabilitate (normalizata 0�1) */
-                    0.22 * LEAST(
-                                GREATEST(
-                                    NVL(net_profit / NULLIF(average_annual_revenue, 0), 0),
-                                0),
-                            1) +
-
-                    /* 18% stabilitate financiara (normalizata 0�1) */
-                    0.18 * LEAST(
-                                GREATEST(
-                                    NVL((total_assets - total_liabilities) / NULLIF(total_assets, 0), 0),
-                                0),
-                            1) +
-
-                    /* 12% risc (1 - D/E ratio/10), bounded 0�1 */
-                    0.12 * LEAST(
-                                GREATEST(
-                                    1 - (NVL(debt_to_equity_ratio, 0) / 10),
-                                0),
-                            1) +
-
-                    /* 18% eficien?a opera?ionala (profit per employee / 1000), bounded 0�1 */
-                    0.18 * LEAST(
-                                GREATEST(
-                                    NVL(net_profit / NULLIF(no_employees, 0), 0) / 1000,
-                                0),
-                            1) +
-
-                    /* 15% capitalizare (normalizata 0�1) */
-                    0.15 * LEAST(
-                                GREATEST(
-                                    NVL(share_capital / NULLIF(total_assets, 0), 0),
-                                0),
-                            1) +
-
-                    /* 15% employees_rating (0�100 ? 0�1) */
-                    0.15 * LEAST(
-                                GREATEST(
-                                    NVL(employees_rating / 100, 0),
-                                0),
-                            1)
-
-                ) * 100,
-            2),
-        0),
-    100)
+          rating NUMBER(5,2) GENERATED ALWAYS AS ( 
+LEAST(GREATEST(ROUND(( 
+                            /* 20% eficiență bugetară */ 
+0.20 * NVL(1 - (operational_costs / NULLIF(annual_budget, 0)), 0) + 
+       /* 20% randament financiar */ 
+0.20 * NVL(revenue_generated / NULLIF(expenses, 0), 0) + 
+         /* 10% cost mediu per angajat (inversat) */ 
+0.10 * NVL(1 - (avg_salary / 10000), 0) + 
+              /* 15% potențial de creștere */ 
+0.15 * NVL(growth_potential / 100, 0) + 
+          /* 10% investiție în training */ 
+0.10 * NVL(training_budget / NULLIF(annual_budget, 0), 0) + 
+           /* 10% poziții deschise vs angajați */ 
+0.10 * NVL(1 - (no_open_positions / NULLIF(no_employees, 0)), 0) + 
+           /* 15% retenție (invers turnover) */ 
+0.15 * NVL(1 - (turnover_rate / 100), 0) ) * 100, 2), 0), 100) 
 ) VIRTUAL,
 
           company_id NUMBER(38,0) NOT NULL,
-          departament_type_code NUMBER(38,0) NOT NULL,
+          department_type_code NUMBER(38,0) NOT NULL,
           
           --technical columns
           creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -122,7 +82,7 @@ v_sql := q'[
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
 
           CONSTRAINT fk_company_id FOREIGN KEY (company_id) REFERENCES company (company_id),
-          CONSTRAINT fk_departament_type_code FOREIGN KEY (departament_type_code) REFERENCES departament_type (departament_type_code)
+          CONSTRAINT fk_department_type_code FOREIGN KEY (department_type_code) REFERENCES department_type (department_type_id)
         )
     ]';
  
@@ -157,7 +117,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.no_open_posi
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.turnover_rate IS ''The turnover rate from the department''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.rating IS ''The rating of the department''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.company_id IS ''The id of the company which contains the depertment''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.departament_type_code IS ''The code of the depertment type''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.department_type_code IS ''The code of the depertment type''';
 
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.creation_date IS ''Technical Column - The creation date of the record''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.department.created_by IS ''Technical Column - The user who created the record''';

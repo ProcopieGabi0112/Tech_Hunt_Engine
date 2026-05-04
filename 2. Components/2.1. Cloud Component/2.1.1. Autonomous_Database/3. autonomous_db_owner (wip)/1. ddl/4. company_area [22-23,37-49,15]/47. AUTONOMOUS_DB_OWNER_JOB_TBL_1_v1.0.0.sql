@@ -33,7 +33,6 @@ IF v_count > 0 THEN
     EXECUTE IMMEDIATE 'DROP TABLE autonomous_db_owner.job CASCADE CONSTRAINTS';
 END IF;
 --CREATE DEPARTMENT TABLE;
-employees_rating
 v_sql := q'[
         CREATE TABLE autonomous_db_owner.job (
 
@@ -49,14 +48,8 @@ v_sql := q'[
           expiry_date DATE, 
           employment_period NUMBER(10,0),
           demand_score NUMBER(5,2) NOT NULL,
-
-
           complexity_score NUMBER(5,2) DEFAULT 0 NOT NULL,
--- Coloana complexity_rating se va calcula pe baza mai multor variabile. tabelele nomenclatoare asociate acestei tabele va trebui sa afisam un complexity_score pe baza tuturor valorilor pentru fiecare valoare pentru ca fiecare valoare din nomenclatoare are o complexitate diferita de exemplu cum Data Analyst este mai slab decat Data Engineer ca si idee. Pentru coloana asta as vrea sa facem o formula bazata pe valorile din nomenclatoare + un count pe numarul de skill-uri dorite. CREATE OR REPLACE TRIGGER trg_job_complexity_score BEFORE INSERT OR UPDATE ON JOB FOR EACH ROW DECLARE v_skill_score NUMBER := 0; v_category_score NUMBER := 0; v_title_score NUMBER := 0; v_level_score NUMBER := 0; v_employment_score NUMBER := 0; v_work_type_score NUMBER := 0; BEGIN -------------------------------------------------------------------- -- 1. SKILL SCORE (fallback complet la 0) -------------------------------------------------------------------- SELECT NVL(SUM(ts.rating * js.importance_weight * js.required_level) / NULLIF(COUNT(*), 0), 0) INTO v_skill_score FROM JOB_SKILL js JOIN TECHNOLOGY_SKILL ts ON ts.technology_skill_code = js.technology_skill_code WHERE js.job_id = :NEW.job_id; -------------------------------------------------------------------- -- 2. NOMENCLATOARE (fiecare cu fallback la 0 dacă FK este NULL) -------------------------------------------------------------------- -- JOB_CATEGORY IF :NEW.job_category_id IS NOT NULL THEN SELECT NVL(complexity_score, 0) INTO v_category_score FROM JOB_CATEGORY WHERE job_category_id = :NEW.job_category_id; ELSE v_category_score := 0; END IF; -- JOB_TITLE IF :NEW.job_title_id IS NOT NULL THEN SELECT NVL(complexity_score, 0) INTO v_title_score FROM JOB_TITLE WHERE job_title_id = :NEW.job_title_id; ELSE v_title_score := 0; END IF; -- JOB_LEVEL IF :NEW.job_level_id IS NOT NULL THEN SELECT NVL(complexity_score, 0) INTO v_level_score FROM JOB_LEVEL WHERE job_level_id = :NEW.job_level_id; ELSE v_level_score := 0; END IF; -- EMPLOYMENT_TYPE IF :NEW.employment_type_id IS NOT NULL THEN SELECT NVL(complexity_score, 0) INTO v_employment_score FROM EMPLOYMENT_TYPE WHERE employment_type_id = :NEW.employment_type_id; ELSE v_employment_score := 0; END IF; -- WORK_TYPE IF :NEW.work_type_id IS NOT NULL THEN SELECT NVL(complexity_score, 0) INTO v_work_type_score FROM WORK_TYPE WHERE work_type_id = :NEW.work_type_id; ELSE v_work_type_score := 0; END IF; -------------------------------------------------------------------- -- 3. FORMULA FINALĂ (50% skill + 50% nomenclatoare) -------------------------------------------------------------------- :NEW.complexity_score := ROUND( 0.5 * v_skill_score + 0.2 * v_category_score + 0.15 * v_title_score + 0.05 * v_level_score + 0.05 * v_employment_score + 0.05 * v_work_type_score, 2 ); END; /
-          
-          
           employees_rating NUMBER(5,2) DEFAULT 0 NOT NULL,
--- Coloana employees_rating se va calcula pe baza mediei obtinute din tabela rating folosind un trigger pe insert/update pe tabela
 
           job_status VARCHAR2(50) NOT NULL, -- DEFAULT: ''DRAFT''
           department_id NUMBER(38,0) NOT NULL,
@@ -79,14 +72,14 @@ v_sql := q'[
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
 
-          CONSTRAINT fk_department_id FOREIGN KEY (department_id) REFERENCES department (department_id),
-          CONSTRAINT fk_employment_type_id FOREIGN KEY (employment_type_id ) REFERENCES employment_type (employment_type_id),
-          CONSTRAINT fk_work_type_id FOREIGN KEY (work_type_id) REFERENCES work_type (work_type_id),
-          CONSTRAINT fk_job_title_id FOREIGN KEY (job_title_id) REFERENCES job_title (job_title_id),
-          CONSTRAINT fk_job_level_id FOREIGN KEY (job_level_id) REFERENCES job_level (job_level_id),
-          CONSTRAINT fk_job_category_id FOREIGN KEY (job_category_id) REFERENCES job_category (job_category_id),
-          CONSTRAINT fk_currency_code FOREIGN KEY (currency_code) REFERENCES currency (currency_code),
-          CONSTRAINT fk_location_id FOREIGN KEY (location_id) REFERENCES location (location_id)
+          CONSTRAINT fk_job_department_id FOREIGN KEY (department_id) REFERENCES department (department_id),
+          CONSTRAINT fk_job_employment_type_id FOREIGN KEY (employment_type_id ) REFERENCES employment_type (employment_type_id),
+          CONSTRAINT fk_job_work_type_id FOREIGN KEY (work_type_id) REFERENCES work_type (work_type_id),
+          CONSTRAINT fk_job_job_title_id FOREIGN KEY (job_title_id) REFERENCES job_title (job_title_id),
+          CONSTRAINT fk_job_job_level_id FOREIGN KEY (job_level_id) REFERENCES job_level (job_level_id),
+          CONSTRAINT fk_job_job_category_id FOREIGN KEY (job_category_id) REFERENCES job_category (job_category_id),
+          CONSTRAINT fk_job_currency_code FOREIGN KEY (currency_code) REFERENCES currency (currency_code),
+          CONSTRAINT fk_job_location_id FOREIGN KEY (location_id) REFERENCES location (location_id)
         )
     ]';
  
@@ -115,7 +108,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.benefits IS ''The b
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.salary_min IS ''The minimum salary of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.salary_max IS ''The maximum salary of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.hire_date IS ''The hire date of the job''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.expire_date IS ''The expire date of the job''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.expiry_date IS ''The expire date of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.demand_score IS ''The demand score of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.complexity_score IS ''The complexity score of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job.employees_rating IS ''The employees rating from the job''';
@@ -222,10 +215,127 @@ IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The TRG_JOB_TECH_COL trigger wasnt created properly.');
 END IF;
 DBMS_OUTPUT.PUT_LINE('[5.] The TRG_JOB_TECH_COL trigger for technical columns was created.');
+--CREATE TRIGGER FOR SYNC OF THE COMPLEXITY_SCORE COLUMN FROM JOB
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_JOB_COMPLEXITY_SCORE_SYNC';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_job_complexity_score_sync';
+END IF;
+--CREATE TRIGGER
+v_sql := '  
+CREATE OR REPLACE TRIGGER trg_job_complexity_score_sync
+BEFORE INSERT OR UPDATE ON job
+FOR EACH ROW
+DECLARE
+    v_cat_score NUMBER := 0;
+    v_title_score NUMBER := 0;
+    v_level_score NUMBER := 0;
+    v_work_score NUMBER := 0;
+    v_employment_score NUMBER := 0;
 
-DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
+    v_skill_complexity NUMBER := 0;
+    v_language_complexity NUMBER := 0;
+    v_degree_complexity NUMBER := 0;
+BEGIN
+    /* 1. Scoruri din nomenclatoare simple */
+    SELECT NVL(complexity_score,0)
+    INTO v_cat_score
+    FROM job_category
+    WHERE job_category_id = :NEW.job_category_id;
+
+    SELECT NVL(complexity_score,0)
+    INTO v_title_score
+    FROM job_title
+    WHERE job_title_id = :NEW.job_title_id;
+
+    SELECT NVL(complexity_score,0)
+    INTO v_level_score
+    FROM job_level
+    WHERE job_level_id = :NEW.job_level_id;
+
+    SELECT NVL(complexity_score,0)
+    INTO v_work_score
+    FROM work_type
+    WHERE work_type_id = :NEW.work_type_id;
+
+    SELECT NVL(complexity_score,0)
+    INTO v_employment_score
+    FROM employment_type
+    WHERE employment_type_id = :NEW.employment_type_id;
+
+    /* 2. Skill Complexity Index */
+    SELECT NVL(AVG(
+                 ( NVL(s.rating,0)
+                 + NVL(v.skills_rating,0)
+                 + NVL(t.rating,0)
+                 + NVL(tt.rating,0)
+                 ) / 4
+               ), 0)
+    INTO v_skill_complexity
+    FROM job_skill js
+    JOIN skill s ON s.skill_code = js.skill_code
+    LEFT JOIN version v ON v.version_code = s.last_version_code
+    LEFT JOIN technology t ON t.technology_code = v.technology_code
+    LEFT JOIN technology_type tt ON tt.technology_type_code = t.technology_type_code
+    WHERE js.job_id = :NEW.job_id;
+
+    /* 3. Language Complexity Index */
+    SELECT NVL(AVG(
+                 ( NVL(l.rating,0)
+                 + NVL(ll.rating,0)
+                 ) / 2
+               ), 0)
+    INTO v_language_complexity
+    FROM language_requirement lr
+    JOIN language l ON l.lang_code = lr.lang_code
+    JOIN lang_level ll ON ll.lang_level_id = lr.lang_level_id
+    WHERE lr.job_id = :NEW.job_id;
+
+    /* 4. Degree Complexity Index */
+    SELECT NVL(AVG(
+                 ( NVL(st.complexity_score,0)
+                + NVL(i.rating,0)
+                 ) / 2
+               ), 0)
+    INTO v_degree_complexity
+    FROM degree_requirement dr
+    JOIN specialization_type st ON st.specialization_type_id = dr.specialization_type_code
+    JOIN institution i ON i.institution_id = dr.institution_id
+    WHERE dr.job_id = :NEW.job_id;
+
+    /* 5. Formula finală */
+    :NEW.complexity_score :=
+        LEAST(
+            (
+                0.10 * v_cat_score +
+                0.10 * v_title_score +
+                0.15 * v_level_score +
+                0.10 * v_work_score +
+                0.10 * v_employment_score +
+                0.15 * v_skill_complexity +
+                0.10 * v_language_complexity +
+                0.10 * v_degree_complexity +
+                0.10 * LEAST(NVL(:NEW.employees_rating,0), 100)
+            ),
+        100);
+END;
+';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_JOB_COMPLEXITY_SCORE_SYNC';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_JOB_COMPLEXITY_SCORE_SYNC trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[6.] The TRG_JOB_COMPLEXITY_SCORE_SYNC trigger for sync of complexity_score column from job table.');
+DBMS_OUTPUT.PUT_LINE('[7.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
+
