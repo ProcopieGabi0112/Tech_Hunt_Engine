@@ -53,8 +53,8 @@ v_sql := q'[
           sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')),
+         
           CONSTRAINT fk_user_id_skill_code PRIMARY KEY (user_id, skill_code),
-
           CONSTRAINT fk_user_skill_user_id FOREIGN KEY (user_id) REFERENCES utilizatori(user_id),
           CONSTRAINT fk_user_skill_skill_code FOREIGN KEY (skill_code) REFERENCES skill(skill_code)
 )

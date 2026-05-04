@@ -63,9 +63,9 @@ AND view_name = 'JOB_SKILL_V';
 IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The JOB_SKILL_V view wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[2.] The JOB_SKILL_V view was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The JOB_SKILL_V view was created.');
 
-DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
+DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);

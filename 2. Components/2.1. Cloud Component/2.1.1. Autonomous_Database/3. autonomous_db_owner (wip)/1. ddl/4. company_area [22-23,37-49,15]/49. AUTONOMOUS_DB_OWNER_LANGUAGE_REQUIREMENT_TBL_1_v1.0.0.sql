@@ -59,8 +59,8 @@ v_sql := q'[
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
 
           CONSTRAINT fk_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
-          CONSTRAINT fk_lang_code FOREIGN KEY (lang_code) REFERENCES language (lang_code),
-          CONSTRAINT fk_lang_level_id FOREIGN KEY (lang_level_id) REFERENCES lang_level (lang_level_id)
+          CONSTRAINT fk_language_requirement_lang_code FOREIGN KEY (lang_code) REFERENCES language (lang_code),
+          CONSTRAINT fk_language_requirement_lang_level_id FOREIGN KEY (lang_level_id) REFERENCES lang_level (lang_level_id)
         )
     ]';
  
@@ -75,13 +75,13 @@ AND tablespace_name = 'DATA';
 IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The LANGUAGE_REQUIREMENT table wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[2.] The LANGUAGE_REQUIREMENT table was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The LANGUAGE_REQUIREMENT table was created.');
 --CREATE COMMENTS FOR TABLE AND COLUMNS
 -- TABLE COMMENT
 EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_owner.language_requirement IS ''The table contains all the links between a job and language and lang_level tables based on job requirements''';
 
 -- COLUMNS COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.language_requirement.language_requirement_code IS ''The code of the language requirement''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.language_requirement.language_requirement_id IS ''The code of the language requirement''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.language_requirement.priority IS ''The priority of the language requirement''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.language_requirement.importance IS ''The importance of the language requirement''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.language_requirement.nivel IS ''The nivel of the language requirement''';
@@ -129,7 +129,7 @@ DBMS_OUTPUT.PUT_LINE('[3.] The SEQ_LANGUAGE_REQUIREMENT_ID sequence for primary 
 --DELETE TRIGGER IF EXISTS;
 SELECT COUNT(*) INTO v_count
 FROM user_triggers
-WHERE trigger_name = 'TRG_LANGUAGE_REQUIREMENT_PK';
+WHERE trigger_name = 'TRG_LANGUAGE_REQUIREMENT_ID_PK';
 IF v_count > 0 THEN
     EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_language_requirement_id_pk';
 END IF;
@@ -145,11 +145,11 @@ EXECUTE IMMEDIATE v_sql;
 --CHECK IG THE TRiGGER WAS CREATED;
 SELECT COUNT(*) INTO v_count
 FROM user_triggers
-WHERE trigger_name = 'TRG_LANGUAGE_REQUIREMENT_PK';
+WHERE trigger_name = 'TRG_LANGUAGE_REQUIREMENT_ID_PK';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The TRG_LANGUAGE_REQUIREMENT_PK trigger wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_LANGUAGE_REQUIREMENT_ID_PK trigger wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[4.] The TRG_LANGUAGE_REQUIREMENT_PK trigger for primary key was created.');
+DBMS_OUTPUT.PUT_LINE('[4.] The TRG_LANGUAGE_REQUIREMENT_ID_PK trigger for primary key was created.');
 --CREATE TRIGGER FOR TECHNICAL COLUMNS
 --DELETE TRIGGER IF EXISTS;
 SELECT COUNT(*) INTO v_count
