@@ -66,10 +66,10 @@ v_sql := q'[
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')),
 
-          CONSTRAINT fk_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
-          CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
-          CONSTRAINT fk_job_history_id FOREIGN KEY (job_history_id) REFERENCES job_history (job_history_id),
-          CONSTRAINT fk_application_id FOREIGN KEY (application_id) REFERENCES application (application_id)
+          CONSTRAINT fk_review_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
+          CONSTRAINT fk_review_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
+          CONSTRAINT fk_review_job_history_id FOREIGN KEY (job_history_id) REFERENCES job_history (job_history_id),
+          CONSTRAINT fk_review_application_id FOREIGN KEY (application_id) REFERENCES job_application (application_id)
         )
     ]';
  
@@ -92,7 +92,7 @@ EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_db_owner.review IS ''The table co
 -- COLUMNS COMMENT
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.review_id IS ''The id of the review''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.title IS ''The title of the review''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.type IS ''The type of the review''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.review_type IS ''The type of the review''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.description IS ''The description of the review''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.overall_rating IS ''The overall rating of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.salary_rating IS ''The salary rating of the job''';

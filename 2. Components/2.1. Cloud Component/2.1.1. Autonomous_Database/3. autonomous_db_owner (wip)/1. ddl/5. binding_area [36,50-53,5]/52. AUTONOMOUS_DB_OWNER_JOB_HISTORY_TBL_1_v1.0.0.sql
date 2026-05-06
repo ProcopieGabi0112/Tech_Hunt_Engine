@@ -56,9 +56,9 @@ v_sql := q'[
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')),
 
-          CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
-          CONSTRAINT fk_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
-          CONSTRAINT fk_application_id FOREIGN KEY (application_id) REFERENCES application (application_id)
+          CONSTRAINT fk_job_history_user_id FOREIGN KEY (user_id) REFERENCES utilizatori (user_id),
+          CONSTRAINT fk_job_history_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
+          CONSTRAINT fk_job_history_application_id FOREIGN KEY (application_id) REFERENCES job_application (application_id)
         )
     ]';
  
@@ -127,10 +127,10 @@ SELECT COUNT(*) INTO v_count
 FROM user_triggers
 WHERE trigger_name = 'TRG_JOB_HISTORY_ID_PK';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_user_job_history_pk';
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_job_history_id_pk';
 END IF;
 --CREATE TRIGGER
-v_sql := 'CREATE OR REPLACE TRIGGER trg_user_job_history_pk
+v_sql := 'CREATE OR REPLACE TRIGGER trg_job_history_id_pk
           BEFORE INSERT ON autonomous_db_owner.job_history
           FOR EACH ROW
           WHEN (NEW.job_history_id IS NULL)
@@ -138,7 +138,7 @@ v_sql := 'CREATE OR REPLACE TRIGGER trg_user_job_history_pk
              SELECT seq_job_history_id.NEXTVAL INTO :NEW.job_history_id FROM dual;
           END;';          
 EXECUTE IMMEDIATE v_sql;
---CHECK IG THE TRiGGER WAS CREATED;
+--CHECK IF THE TRiGGER WAS CREATED;
 SELECT COUNT(*) INTO v_count
 FROM user_triggers
 WHERE trigger_name = 'TRG_JOB_HISTORY_ID_PK';

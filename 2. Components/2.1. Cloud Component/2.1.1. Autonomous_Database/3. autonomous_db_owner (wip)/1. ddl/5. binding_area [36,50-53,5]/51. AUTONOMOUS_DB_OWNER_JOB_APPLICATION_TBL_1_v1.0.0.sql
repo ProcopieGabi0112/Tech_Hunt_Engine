@@ -97,17 +97,17 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_application.sync_ve
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_application.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.job_application.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
 
---CREATE SEQUENCE SEQ_JOB_APPLICATION_ID FOR PRIMARY KEY
+--CREATE SEQUENCE SEQ_APPLICATION_ID FOR PRIMARY KEY
 --DELETE SEQUENCE IF EXISTS;
 SELECT COUNT(*) INTO v_count
 FROM user_sequences
-WHERE sequence_name = 'SEQ_JOB_APPLICATION_ID';
+WHERE sequence_name = 'SEQ_APPLICATION_ID';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP SEQUENCE autonomous_db_owner.seq_job_application_id';
+    EXECUTE IMMEDIATE 'DROP SEQUENCE autonomous_db_owner.seq_application_id';
 END IF;
 --CREATE SEQUENCE
  EXECUTE IMMEDIATE '
-    CREATE SEQUENCE seq_job_application_id
+    CREATE SEQUENCE seq_application_id
     START WITH 1
     INCREMENT BY 1
     NOCACHE
@@ -115,37 +115,37 @@ END IF;
   ';
 SELECT COUNT(*) INTO v_count
 FROM user_sequences
-WHERE sequence_name = 'SEQ_JOB_APPLICATION_ID';
+WHERE sequence_name = 'SEQ_APPLICATION_ID';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The SEQ_JOB_APPLICATION_ID sequence wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The SEQ_APPLICATION_ID sequence wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[3.] The SEQ_JOB_APPLICATION_ID sequence for primary key was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The SEQ_APPLICATION_ID sequence for primary key was created.');
 
 --CREATE TRIGGER FOR PRIMARY KEY;
 --DELETE TRIGGER IF EXISTS;
 SELECT COUNT(*) INTO v_count
 FROM user_triggers
-WHERE trigger_name = 'TRG_JOB_APPLICATION_ID_PK';
+WHERE trigger_name = 'TRG_APPLICATION_ID_PK';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_user_job_application_pk';
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_user_application_pk';
 END IF;
 --CREATE TRIGGER
-v_sql := 'CREATE OR REPLACE TRIGGER trg_user_job_application_pk
+v_sql := 'CREATE OR REPLACE TRIGGER trg_application_id_pk
           BEFORE INSERT ON autonomous_db_owner.job_application
           FOR EACH ROW
-          WHEN (NEW.job_application_id IS NULL)
+          WHEN (NEW.application_id IS NULL)
           BEGIN
-             SELECT seq_job_application_id.NEXTVAL INTO :NEW.job_application_id FROM dual;
+             SELECT seq_application_id.NEXTVAL INTO :NEW.application_id FROM dual;
           END;';          
 EXECUTE IMMEDIATE v_sql;
---CHECK IG THE TRiGGER WAS CREATED;
+--CHECK IF THE TRiGGER WAS CREATED;
 SELECT COUNT(*) INTO v_count
 FROM user_triggers
-WHERE trigger_name = 'TRG_JOB_APPLICATION_ID_PK';
+WHERE trigger_name = 'TRG_APPLICATION_ID_PK';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The TRG_JOB_APPLICATION_ID_PK trigger wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_APPLICATION_ID_PK trigger wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[4.] The TRG_JOB_APPLICATION_ID_PK trigger for primary key was created.');
+DBMS_OUTPUT.PUT_LINE('[4.] The TRG_APPLICATION_ID_PK trigger for primary key was created.');
 --CREATE TRIGGER FOR TECHNICAL COLUMNS
 --DELETE TRIGGER IF EXISTS;
 SELECT COUNT(*) INTO v_count
