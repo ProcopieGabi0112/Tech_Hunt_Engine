@@ -1,0 +1,128 @@
+version: "3.9"
+
+services:
+    postgres:
+        image: postgres:16
+        container_name: postgres_db
+        environment:
+             POSTGRES_USER: postgres_admin_owner
+             POSTGRES_PASSWORD: postgres_admin_pass
+             POSTGRES_DB: user_interface_postgres_db
+        ports:
+          - "5432:5432"
+        volumes:
+            - ./1_user_interface_postgres_database/1_postgres_database:/var/lib/postgresql/data
+            - ./1_user_interface_postgres_database/2_database_initialization:/docker-entrypoint-initdb.d   
+        healthcheck:
+             test: ["CMD-SHELL", "pg_isready -U postgres_admin_owner"]
+             interval: 5s
+             timeout: 5s
+             retries: 10
+    pgadmin:
+       image: dpage/pgadmin4:8
+       container_name: pgadmin
+       environment:
+           PGADMIN_DEFAULT_EMAIL: admin@admin.com
+           PGADMIN_DEFAULT_PASSWORD: admin
+       ports:
+         - "5050:80"
+       depends_on:
+         - postgres
+       volumes:
+         - ./1_user_interface_postgres_database/3_pgadmin_initialization:/var/lib/pgadmin
+       restart: always
+      
+    mongodb:
+       image: mongo:7
+       container_name: mongodb
+       environment:
+           MONGO_INITDB_ROOT_USERNAME: mongo_admin_owner
+           MONGO_INITDB_ROOT_PASSWORD: mongo_admin_pass
+       ports:
+         - "27017:27017"
+       volumes:
+         - ./2_user_interface_mongo_database/1_mongo_database:/data/db
+         - ./2_user_interface_mongo_database/2_mongo_initialization:/docker-entrypoint-initdb.d
+       restart: always
+
+    ngrok-db:
+          image: ngrok/ngrok:latest
+          container_name: ngrok_db
+          user: root
+          command: ["start", "--all", "--config=/etc/ngrok/ngrok_db.yml"]
+          volumes:
+            - ./5_monitoring_tools/5_ngrok/ngrok_db.yml:/etc/ngrok/ngrok_db.yml
+          ports:
+            - "4041:4040"
+          depends_on:
+           - postgres
+          restart: always
+     
+    mongo-express:
+         image: mongo-express:1
+         container_name: mongo_express
+         environment:
+             ME_CONFIG_MONGODB_ADMINUSERNAME: mongo_admin_owner
+             ME_CONFIG_MONGODB_ADMINPASSWORD: mongo_admin_pass
+             ME_CONFIG_MONGODB_SERVER: mongodb
+         ports:
+            - "8081:8081"
+         depends_on:
+            - mongodb
+         volumes:
+            - ./2_user_interface_mongo_database/4_express_initialization:/config
+         restart: always
+
+    backend:
+       build: ./3_tech-hunter-engine-rest-api
+       container_name: spring_api
+       ports:
+         - "8080:8080"
+       depends_on:
+             postgres:
+                 condition: service_healthy
+             mongodb:
+                 condition: service_started
+       restart: always
+
+    frontend:
+        build: ./4_tech_hunter_engine_interface
+        container_name: nextjs
+        ports:
+          - "3000:3000"
+        depends_on:
+          - backend
+        restart: always
+
+    ngrok-frontend:
+        image: ngrok/ngrok:latest
+        container_name: ngrok_frontend
+        user: root
+        command: ["start", "--all", "--config=/etc/ngrok/ngrok_frontend.yml"]
+        volumes:
+            - ./5_monitoring_tools/5_ngrok/ngrok_frontend.yml:/etc/ngrok/ngrok_frontend.yml
+        ports:
+            - "4040:4040"
+        depends_on:
+            - frontend
+        restart: always
+
+    prometheus:
+        image: prom/prometheus
+        container_name: prometheus
+        ports:
+          - "9090:9090"
+        volumes:
+           - ./5_monitoring_tools/1_prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+        restart: always
+
+    grafana:
+       image: grafana/grafana
+       container_name: grafana
+       ports:
+         - "3001:3000"
+       depends_on:
+         - prometheus
+       volumes:
+         - ./5_monitoring_tools/2_grafana:/var/lib/grafana
+       restart: always
