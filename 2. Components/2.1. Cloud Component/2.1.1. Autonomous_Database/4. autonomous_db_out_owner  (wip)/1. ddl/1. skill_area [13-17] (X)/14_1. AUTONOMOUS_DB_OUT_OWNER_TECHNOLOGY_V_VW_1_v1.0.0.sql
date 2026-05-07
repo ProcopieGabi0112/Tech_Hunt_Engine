@@ -38,7 +38,7 @@ SELECT
 technology_code,
 name,
 release_date,
-creator
+creator,
 official_site,
 rating,
 description,
