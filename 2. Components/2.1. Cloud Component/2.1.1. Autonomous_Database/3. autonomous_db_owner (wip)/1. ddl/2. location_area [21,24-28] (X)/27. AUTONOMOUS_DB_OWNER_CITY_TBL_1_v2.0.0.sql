@@ -42,8 +42,8 @@ v_sql := q'[
           population NUMBER(15,0) NOT NULL,
           area NUMBER(15,0) NOT NULL,
           is_capital VARCHAR2(5) NOT NULL,
-          latitude NUMBER(9,6) NOT NULL,
-          longitude NUMBER(9,6) NOT NULL,
+          latitude NUMBER(15,9) NOT NULL,
+          longitude NUMBER(15,9) NOT NULL,
           description VARCHAR2(200),
           administrative_unit_id NUMBER(38,0) NOT NULL, 
           
