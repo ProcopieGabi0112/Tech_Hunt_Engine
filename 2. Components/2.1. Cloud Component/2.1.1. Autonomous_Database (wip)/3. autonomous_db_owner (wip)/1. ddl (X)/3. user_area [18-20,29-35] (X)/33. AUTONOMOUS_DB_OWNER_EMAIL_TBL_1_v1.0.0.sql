@@ -99,6 +99,56 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.email.sync_version IS '
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.email.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.email.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
 
+--CREATE SEQUENCE SEQ_SPECIALIZATION_TYPE_ID FOR PRIMARY KEY
+--DELETE SEQUENCE IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_sequences
+WHERE sequence_name = 'SEQ_EMAIL_CODE';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE autonomous_db_owner.seq_email_code';
+END IF;
+--CREATE SEQUENCE
+ EXECUTE IMMEDIATE '
+    CREATE SEQUENCE seq_email_code
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE
+  ';
+SELECT COUNT(*) INTO v_count
+FROM user_sequences
+WHERE sequence_name = 'SEQ_EMAIL_CODE';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The SEQ_EMAIL_CODE sequence wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[4.] The SEQ_EMAIL_CODE sequence for primary key was created.');
+
+--CREATE TRIGGER FOR PRIMARY KEY;
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_EMAIL_CODE_PK';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_email_code_pk';
+END IF;
+--CREATE TRIGGER
+v_sql := 'CREATE OR REPLACE TRIGGER trg_email_code_pk
+          BEFORE INSERT ON autonomous_db_owner.email
+          FOR EACH ROW
+          WHEN (NEW.email_code IS NULL)
+          BEGIN
+             SELECT seq_email_code.NEXTVAL INTO :NEW.email_code FROM dual;
+          END;';          
+EXECUTE IMMEDIATE v_sql;
+--CHECK IG THE TRiGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_EMAIL_CODE_PK';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_EMAIL_CODE_PK trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[5.] The TRG_EMAIL_CODE_PK trigger for primary key was created.');
+
 --CREATE TRIGGER FOR TECHNICAL COLUMNS
 --DELETE TRIGGER IF EXISTS;
 SELECT COUNT(*) INTO v_count
@@ -140,9 +190,9 @@ WHERE trigger_name = 'TRG_EMAIL_TECH_COL';
 IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The TRG_EMAIL_TECH_COL trigger wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[4.] The TRG_EMAIL_TECH_COL trigger for technical columns was created.');
+DBMS_OUTPUT.PUT_LINE('[6.] The TRG_EMAIL_TECH_COL trigger for technical columns was created.');
 
-DBMS_OUTPUT.PUT_LINE('[5.] The script running is done!');
+DBMS_OUTPUT.PUT_LINE('[7.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
