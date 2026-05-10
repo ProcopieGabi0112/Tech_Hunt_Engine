@@ -221,3 +221,67 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+
+
+INSERT INTO autonomous_dw_owner.dwh_institution_location_dim (
+    location_address_code,
+    location_address,
+    postal_code,
+    location_details,
+    city_name,
+    capital_city_flag,
+    city_position,
+    city_stats,
+    administrative_unit_name,
+    administrative_unit_stats,
+    country_name,
+    country_stats,
+    country_rating,
+    official_language_name,
+    currency_name,
+    region_name
+)
+SELECT
+    loc.location_id AS location_address_code,
+    loc.street_name || ' ' || loc.street_number AS location_address,
+    loc.postal_code AS postal_code,
+    TRIM(
+        NVL(loc.building, '') || ' ' ||
+        NVL(loc.staircase, '') || ' ' ||
+        NVL(loc.floor, '') || ' ' ||
+        NVL(loc.appartment_number,'')
+    ) AS location_details,
+    c.name AS city_name,
+    CASE WHEN c.is_capital = 'Y' THEN 'Y' ELSE 'N' END AS capital_city_flag,
+    c.latitude || ',' || c.longitude AS city_position,
+    c.population || ' people, ' || c.area || ' km2' AS city_stats,
+    aut.name ||' '||au.name AS administrative_unit_name,
+    au.no_cities || ' cities, '||au.population || ' people, ' || au.area || ' km2,' AS administrative_unit_stats,
+    co.name AS country_name,
+    co.population || ' people, ' || co.area || ' km2' AS country_stats,
+    co.rating AS country_rating,
+    lang.name AS official_language_name,
+    cur.name AS currency_name,
+    reg.name AS region_name
+FROM autonomous_dw_landing_owner.dwh_user_spec us
+JOIN autonomous_dw_landing_owner.dwh_specialization sp
+    ON us.specialization_id = sp.specialization_id
+JOIN autonomous_dw_landing_owner.dwh_institution inst
+    ON sp.institution_id = inst.institution_id
+JOIN autonomous_dw_landing_owner.dwh_location loc
+    ON inst.location_id = loc.location_id
+JOIN autonomous_dw_landing_owner.dwh_city c
+    ON loc.city_code = c.city_code
+JOIN autonomous_dw_landing_owner.dwh_administrative_unit au
+    ON c.administrative_unit_id = au.administrative_unit_id
+JOIN autonomous_dw_landing_owner.dwh_administrative_unit_type aut
+    ON au.administrative_unit_type_id = aut.administrative_unit_type_id    
+JOIN autonomous_dw_landing_owner.dwh_country co
+    ON au.country_id = co.country_id
+JOIN autonomous_dw_landing_owner.dwh_region reg
+    ON co.region_id = reg.region_id
+LEFT JOIN autonomous_dw_landing_owner.dwh_language lang
+    ON co.official_lang_code = lang.lang_code
+LEFT JOIN autonomous_dw_landing_owner.dwh_currency cur
+    ON co.currency_code = cur.currency_code;
+    
