@@ -157,14 +157,22 @@ END IF;
 --CREATE TRIGGER
 v_sql := '  CREATE OR REPLACE TRIGGER trg_job_history_tech_col
             BEFORE INSERT OR UPDATE ON autonomous_db_owner.job_history
-            FOR EACH ROW
+             FOR EACH ROW
             BEGIN
                  IF INSERTING THEN
                     :NEW.created_by := USER;
                     :NEW.last_updated_by := USER;
-                    :NEW.creation_date := CURRENT_TIMESTAMP;
-                    :NEW.last_update_date := CURRENT_TIMESTAMP;
-                 END IF;
+
+                    -- VARIANTA CURENTA
+                    -- dacă utilizatorul NU trimite creation_date, îl setăm noi
+                        IF :NEW.creation_date IS NULL THEN
+                              :NEW.creation_date := CURRENT_TIMESTAMP;
+                        END IF;
+
+                    -- last_update_date = creation_date (mereu la insert)
+                    :NEW.last_update_date := :NEW.creation_date;
+                   
+                   END IF;
 
                  IF UPDATING THEN
                     :NEW.last_update_date := CURRENT_TIMESTAMP;
