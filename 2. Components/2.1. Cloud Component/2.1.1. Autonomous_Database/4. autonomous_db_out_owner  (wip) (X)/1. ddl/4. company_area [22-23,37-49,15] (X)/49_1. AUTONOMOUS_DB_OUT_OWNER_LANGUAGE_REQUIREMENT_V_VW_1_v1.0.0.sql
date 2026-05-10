@@ -1,5 +1,5 @@
---AUTONOMOUS_DB_OUT_OWNER_JOB_V_VW_1_v1.0.0
---"JOB_V VIEW"
+--AUTONOMOUS_DB_OUT_OWNER_LANGUAGE_REQUIREMENT_V_VW_1_v1.0.0
+--"LANGUAGE_REQUIREMENT_V VIEW"
 SET SERVEROUTPUT ON;
 DECLARE
   v_count NUMBER;
@@ -23,39 +23,27 @@ IF v_count = 0 THEN
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDB"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE JOB_V IF EXIST;
+--DELETE TABLE LANGUAGE_REQUIREMENT_V IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_views
 WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
-AND view_name = 'JOB_V';
+AND view_name = 'LANGUAGE_REQUIREMENT_V';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP VIEW autonomous_db_out_owner.job_v CASCADE CONSTRAINTS';
+    EXECUTE IMMEDIATE 'DROP VIEW autonomous_db_out_owner.language_requirement_v CASCADE CONSTRAINTS';
 END IF;
---CREATE JOB_V TABLE;
+--CREATE LANGUAGE_REQUIREMENT_V TABLE;
 v_sql := q'[
-CREATE OR REPLACE VIEW autonomous_db_out_owner.job_v AS
+CREATE OR REPLACE VIEW autonomous_db_out_owner.language_requirement_v AS
 SELECT 
-job_id,
+language_requirement_id,
+priority,
+importance,
+nivel,
+certification_required,
 description,
-requirements,
-responsabilities,
-benefits,
-salary_min,
-salary_max,
-hire_date,
-expiry_date,
-employment_period,
-demand_score,
-employees_rating,
-job_status,
-department_id,
-employment_type_id,
-work_type_id,
-job_title_id,
-job_level_id,
-job_category_id,
-currency_code,
-location_id,
+job_id,
+lang_code,
+lang_level_id,
 creation_date,
 created_by,
 last_update_date,
@@ -65,18 +53,18 @@ sync_status,
 sync_version,
 last_synced_at,
 deleted_flag
-FROM autonomous_db_owner.job;
+FROM autonomous_db_owner.language_requirement;
 ]';
 EXECUTE IMMEDIATE v_sql;
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_views
 WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
-AND view_name = 'JOB_V';
+AND view_name = 'LANGUAGE_REQUIREMENT_V';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The JOB_V view wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The LANGUAGE_REQUIREMENT_V view wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[2.] The JOB_V view was created.');
+DBMS_OUTPUT.PUT_LINE('[2.] The LANGUAGE_REQUIREMENT_V view was created.');
 
 DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
 EXCEPTION

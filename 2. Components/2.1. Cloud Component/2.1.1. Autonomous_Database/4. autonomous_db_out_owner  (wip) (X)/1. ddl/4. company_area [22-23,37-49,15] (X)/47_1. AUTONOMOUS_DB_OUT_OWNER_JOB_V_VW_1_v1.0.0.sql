@@ -1,5 +1,5 @@
---AUTONOMOUS_DB_OUT_OWNER_DEGREE_REQUIREMENT_V_VW_1_v1.0.0
---"DEGREE_REQUIREMENT_V VIEW"
+--AUTONOMOUS_DB_OUT_OWNER_JOB_V_VW_1_v1.0.0
+--"JOB_V VIEW"
 SET SERVEROUTPUT ON;
 DECLARE
   v_count NUMBER;
@@ -23,26 +23,40 @@ IF v_count = 0 THEN
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDB"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE DEGREE_REQUIREMENT_V IF EXIST;
+--DELETE TABLE JOB_V IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_views
 WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
-AND view_name = 'DEGREE_REQUIREMENT_V';
+AND view_name = 'JOB_V';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP VIEW autonomous_db_out_owner.degree_requirement_v CASCADE CONSTRAINTS';
+    EXECUTE IMMEDIATE 'DROP VIEW autonomous_db_out_owner.job_v CASCADE CONSTRAINTS';
 END IF;
---CREATE DEGREE_REQUIREMENT_V TABLE;
+--CREATE JOB_V TABLE;
 v_sql := q'[
-CREATE OR REPLACE VIEW autonomous_db_out_owner.degree_requirement_v AS
+CREATE OR REPLACE VIEW autonomous_db_out_owner.job_v AS
 SELECT 
-degree_requirement_code,
-priority,
-degree_type,
-graduation_required,
-description,
 job_id,
-specialization_type_code,
-institution_id,
+description,
+requirements,
+responsabilities,
+benefits,
+salary_min,
+salary_max,
+hire_date,
+expiry_date,
+employment_period,
+demand_score,
+complexity_score,
+employees_rating,
+job_status,
+department_id,
+employment_type_id,
+work_type_id,
+job_title_id,
+job_level_id,
+job_category_id,
+currency_code,
+location_id,
 creation_date,
 created_by,
 last_update_date,
@@ -52,18 +66,18 @@ sync_status,
 sync_version,
 last_synced_at,
 deleted_flag
-FROM autonomous_db_owner.degree_requirement;
+FROM autonomous_db_owner.job;
 ]';
 EXECUTE IMMEDIATE v_sql;
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_views
 WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
-AND view_name = 'DEGREE_REQUIREMENT_V';
+AND view_name = 'JOB_V';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The DEGREE_REQUIREMENT_V view wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The JOB_V view wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[2.] The DEGREE_REQUIREMENT_V view was created.');
+DBMS_OUTPUT.PUT_LINE('[2.] The JOB_V view was created.');
 
 DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
 EXCEPTION

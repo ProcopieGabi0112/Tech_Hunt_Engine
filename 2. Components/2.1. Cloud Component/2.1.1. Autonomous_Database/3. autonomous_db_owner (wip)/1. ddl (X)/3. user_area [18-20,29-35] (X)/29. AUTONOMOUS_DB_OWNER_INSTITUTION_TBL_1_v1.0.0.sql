@@ -44,7 +44,7 @@ v_sql := q'[
           rating NUMBER(5,2) DEFAULT 0 NOT NULL,
           profile_picture BLOB, 
           description VARCHAR2(250),
-          location_id NUMBER(38,0)  -- NOT NULL
+          location_id NUMBER(38,0)  NOT NULL
           ,
           
           --technical columns
