@@ -39,7 +39,7 @@ v_sql := q'[
           --business columns
           degree_requirement_code NUMBER(38,0) PRIMARY KEY,
           priority NUMBER(3,0) NOT NULL,
-          importance VARCHAR2(20) NOT NULL,
+          importance VARCHAR2(20) DEFAULT 'REQUIRED' NOT NULL CHECK (importance IN ('REQUIRED','OPTIONAL','NICE TO HAVE')),
           degree_type VARCHAR2(20) NOT NULL,
           graduation_required VARCHAR2(1),
           description VARCHAR2(100),
@@ -58,9 +58,9 @@ v_sql := q'[
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
 
-          CONSTRAINT fk_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
-          CONSTRAINT fk_specialization_type_code FOREIGN KEY (specialization_type_code) REFERENCES specialization_type (specialization_type_id),
-          CONSTRAINT fk_institution_id FOREIGN KEY (institution_id) REFERENCES institution (institution_id)
+          CONSTRAINT fk_degree_requirement_job_id FOREIGN KEY (job_id) REFERENCES job (job_id),
+          CONSTRAINT fk_degree_requirement_specialization_type_code FOREIGN KEY (specialization_type_code) REFERENCES specialization_type (specialization_type_id),
+          CONSTRAINT fk_degree_requirement_institution_id FOREIGN KEY (institution_id) REFERENCES institution (institution_id)
         )
     ]';
  

@@ -39,7 +39,7 @@ v_sql := q'[
           --business columns
           language_requirement_id NUMBER(38,0) PRIMARY KEY,
           priority NUMBER(3,0) NOT NULL,
-          importance VARCHAR2(20) NOT NULL,
+          importance VARCHAR2(20) DEFAULT 'REQUIRED' NOT NULL CHECK (importance IN ('REQUIRED','OPTIONAL','NICE TO HAVE')),
           nivel VARCHAR2(30) NOT NULL,
           certification_required VARCHAR2(1) NOT NULL,
           description VARCHAR2(100),

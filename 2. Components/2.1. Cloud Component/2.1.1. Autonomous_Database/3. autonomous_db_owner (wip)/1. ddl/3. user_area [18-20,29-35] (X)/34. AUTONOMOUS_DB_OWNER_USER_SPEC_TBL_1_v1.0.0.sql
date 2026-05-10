@@ -130,7 +130,56 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[4.] The TRG_USER_SPEC_TECH_COL trigger for technical columns was created.');
 
-DBMS_OUTPUT.PUT_LINE('[5.] The script running is done!');
+--CREATE TRIGGER FOR POPULATING RATING COLUMN FROM SPECIALIZATION
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_SPECIALIZATION_RATING_SYNC';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_specialization_rating_sync';
+END IF;
+
+--CREATE TRIGGER
+v_sql := '  
+CREATE OR REPLACE TRIGGER autonomous_db_owner.trg_specialization_rating_sync
+AFTER INSERT OR UPDATE OR DELETE ON autonomous_db_owner.user_spec
+DECLARE
+    v_total NUMBER;
+BEGIN
+    -- total înregistrări în user_spec
+    SELECT COUNT(*) INTO v_total
+    FROM autonomous_db_owner.user_spec;
+
+    -- dacă nu există niciun user_spec, punem 0 la toate specializările
+    IF v_total = 0 THEN
+        UPDATE autonomous_db_owner.specialization
+        SET rating = 0;
+    ELSE
+        -- recalculăm rating-ul pentru fiecare specializare
+        UPDATE autonomous_db_owner.specialization s
+        SET s.rating =
+            ROUND(
+                NVL((
+                    SELECT COUNT(*)
+                    FROM autonomous_db_owner.user_spec us
+                    WHERE us.specialization_id = s.specialization_id
+                ), 0) / v_total * 100,
+            2);
+    END IF;
+END;
+
+';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_USER_SPEC_TECH_COL';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_SPECIALIZATION_RATING_SYNC trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[5.] The TRG_SPECIALIZATION_RATING_SYNC trigger for technical columns was created.');
+
+DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);

@@ -40,8 +40,7 @@ v_sql := q'[
           application_id NUMBER(38,0) PRIMARY KEY,
           apply_date DATE NOT NULL, 
           apply_source VARCHAR2(50) NOT NULL,
-          status VARCHAR2(50) NOT NULL,
---The status of the application. The RECOMMENDED status is the first stage when the system recommend the job. In the next step an application can be CANCELLED(by user),REJECTED(by company), EXPIRED(by system) and OFFERED(by company). The OFFERED status is followed by HIRED(by user) or OFFER_DECLIENED(by user).   
+          status VARCHAR2(50) DEFAULT 'APPLIED' NOT NULL CHECK (source_system IN ('RECOMMENDED','APPLIED','CANCELLED','OFFERED','EXPIRED','REJECTED','HIRED','OFFER_DECLINED')),
           salary VARCHAR2(50) NOT NULL,
           user_id NUMBER(38,0) NOT NULL,
           job_id NUMBER(38,0) NOT NULL,

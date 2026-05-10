@@ -47,7 +47,7 @@ v_sql := q'[
           avg_salary NUMBER(15,2) NOT NULL,
           growth_potential NUMBER(5,2) NOT NULL,
           training_budget NUMBER(15,2) NOT NULL,
-          no_open_positions NUMBER(10,0),
+          no_open_positions NUMBER(10,0) DEFAULT 0,
           turnover_rate NUMBER(5,2) NOT NULL,
           rating NUMBER(5,2) GENERATED ALWAYS AS ( 
 LEAST(GREATEST(ROUND(( 

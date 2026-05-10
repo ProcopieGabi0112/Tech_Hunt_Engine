@@ -130,7 +130,55 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[4.] The TRG_USER_LEVEL_TECH_COL trigger for technical columns was created.');
 
-DBMS_OUTPUT.PUT_LINE('[5.] The script running is done!');
+--CREATE TRIGGER FOR POPULATING RATING COLUMN FROM SPECIALIZATION
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_LANG_LEVEL_RATING_SYNC';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_lang_level_rating_sync';
+END IF;
+
+--CREATE TRIGGER
+v_sql := '  
+CREATE OR REPLACE TRIGGER autonomous_db_owner.trg_lang_level_rating_sync
+AFTER INSERT OR UPDATE OR DELETE ON autonomous_db_owner.user_level
+DECLARE
+    v_total NUMBER;
+BEGIN
+    -- total înregistrări în user_level
+    SELECT COUNT(*) INTO v_total
+    FROM autonomous_db_owner.user_level;
+
+    -- dacă nu există înregistrări, punem rating = 0 la toate nivelurile
+    IF v_total = 0 THEN
+        UPDATE autonomous_db_owner.lang_level
+        SET rating = 0;
+    ELSE
+        -- recalculăm rating-ul pentru fiecare nivel de limbă
+        UPDATE autonomous_db_owner.lang_level ll
+        SET ll.rating =
+            ROUND(
+                NVL((
+                    SELECT COUNT(*)
+                    FROM autonomous_db_owner.user_level ul
+                    WHERE ul.lang_level_id = ll.lang_level_id
+                ), 0) / v_total * 100,
+            2);
+    END IF;
+END;
+';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_LANG_LEVEL_RATING_SYNC';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_LANG_LEVEL_RATING_SYNC trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[5.] The TRG_LANG_LEVEL_RATING_SYNC trigger for technical columns was created.');
+
+DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);

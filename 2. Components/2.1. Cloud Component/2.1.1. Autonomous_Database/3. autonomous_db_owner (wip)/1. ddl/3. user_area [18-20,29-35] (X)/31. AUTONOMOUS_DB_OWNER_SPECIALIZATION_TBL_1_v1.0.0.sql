@@ -46,7 +46,7 @@ v_sql := q'[
           entry_difficulty NUMBER(5,2) NOT NULL,
           graduation_difficulty NUMBER(5,2) NOT NULL,
           industry_reputation NUMBER(5,2) NOT NULL,
-          rating NUMBER(5,2) NOT NULL, 
+          rating NUMBER(5,2) DEFAULT 0 NOT NULL, 
           description VARCHAR2(200),
           institution_id NUMBER(5,2) NOT NULL,
           specialization_type_id NUMBER(5,2) NOT NULL,
@@ -62,7 +62,7 @@ v_sql := q'[
           last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
           deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')),
 
-          CONSTRAINT fk_institution_id FOREIGN KEY (institution_id) REFERENCES institution (institution_id),
+          CONSTRAINT fk_specialization_institution_id FOREIGN KEY (institution_id) REFERENCES institution (institution_id),
           CONSTRAINT fk_specialization_type_id FOREIGN KEY (specialization_type_id) REFERENCES specialization_type (specialization_type_id)
         )
     ]';

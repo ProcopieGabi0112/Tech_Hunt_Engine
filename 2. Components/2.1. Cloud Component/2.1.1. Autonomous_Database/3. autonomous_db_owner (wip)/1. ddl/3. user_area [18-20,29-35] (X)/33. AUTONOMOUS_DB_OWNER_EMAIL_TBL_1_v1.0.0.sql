@@ -37,10 +37,11 @@ v_sql := q'[
         CREATE TABLE autonomous_db_owner.email (
           --business columns
           email_code      NUMBER(38,0) PRIMARY KEY,
-          subject         VARCHAR2(250) NOT NULL,
-	      content         VARCHAR2(250),
+          subject         VARCHAR2(250) DEFAULT 'no subject' NOT NULL,
+	      content         VARCHAR2(250) DEFAULT 'no subject',
+          attachment      BLOB,
           arrival_time    TIMESTAMP, 
-          importance      VARCHAR2(50),
+          importance      VARCHAR2(50) DEFAULT 'Not Important' CHECK (importance IN ('High Importance','Medium Importance','Not Important')),
           reply_to_email  NUMBER(38,0),
           receiver        NUMBER(38,0),
           sender          NUMBER(38,0),  

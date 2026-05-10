@@ -51,7 +51,7 @@ v_sql := q'[
           complexity_score NUMBER(5,2) DEFAULT 0 NOT NULL,
           employees_rating NUMBER(5,2) DEFAULT 0 NOT NULL,
 
-          job_status VARCHAR2(50) NOT NULL, -- DEFAULT: ''DRAFT''
+          job_status VARCHAR2(50) DEFAULT 'DRAFT' NOT NULL CHECK (job_status IN ('DRAFT','ACTIVE','EXPIRED','CLOSED','INACTIVE')),
           department_id NUMBER(38,0) NOT NULL,
           employment_type_id NUMBER(25,0) NOT NULL,
           work_type_id NUMBER(25,0) NOT NULL,

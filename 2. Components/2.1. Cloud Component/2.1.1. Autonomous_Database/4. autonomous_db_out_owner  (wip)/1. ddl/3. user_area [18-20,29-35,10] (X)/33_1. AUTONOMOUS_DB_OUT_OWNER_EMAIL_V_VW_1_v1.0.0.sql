@@ -38,6 +38,7 @@ SELECT
 email_code,
 subject,
 content,
+attachment,
 arrival_time,
 importance,
 reply_to_email,

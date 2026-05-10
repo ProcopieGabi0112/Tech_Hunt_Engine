@@ -41,8 +41,26 @@ v_sql := q'[
           title VARCHAR2(100) NOT NULL,
           review_type VARCHAR2(30) NOT NULL,
           description VARCHAR2(500) NOT NULL,
-          rating_overall NUMBER(5,2),
--- rating_overall NUMBER(5,2) GENERATED ALWAYS AS ( ROUND(( NVL(work_rating, 0) + NVL(salary_rating, 0) + NVL(manager_rating, 0) + NVL(team_rating, 0) ) / ( CASE WHEN work_rating IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN salary_rating IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN manager_rating IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN team_rating IS NOT NULL THEN 1 ELSE 0 END ), 2) ) VIRTUAL,
+          rating_overall NUMBER(5,2) GENERATED ALWAYS AS (
+    CASE 
+        WHEN 
+            (CASE WHEN work_rating IS NOT NULL THEN 1 ELSE 0 END +
+             CASE WHEN salary_rating IS NOT NULL THEN 1 ELSE 0 END +
+             CASE WHEN manager_rating IS NOT NULL THEN 1 ELSE 0 END +
+             CASE WHEN team_rating IS NOT NULL THEN 1 ELSE 0 END) = 0
+        THEN NULL
+        ELSE ROUND(
+                (NVL(work_rating,0) +
+                 NVL(salary_rating,0) +
+                 NVL(manager_rating,0) +
+                 NVL(team_rating,0)) /
+                (CASE WHEN work_rating IS NOT NULL THEN 1 ELSE 0 END +
+                 CASE WHEN salary_rating IS NOT NULL THEN 1 ELSE 0 END +
+                 CASE WHEN manager_rating IS NOT NULL THEN 1 ELSE 0 END +
+                 CASE WHEN team_rating IS NOT NULL THEN 1 ELSE 0 END)
+            , 2)
+    END
+) VIRTUAL,
           work_rating NUMBER(5,2) NOT NULL, 
           salary_rating NUMBER(5,2) NOT NULL,
           manager_rating NUMBER(5,2) NOT NULL,
@@ -52,7 +70,7 @@ v_sql := q'[
           is_verified VARCHAR2(1) NOT NULL,
           job_id NUMBER(38,0) NOT NULL,
           user_id NUMBER(38,0) NOT NULL,
-          job_history_id NUMBER(38,0) NOT NULL,
+          job_history_id NUMBER(38,0),
           application_id NUMBER(38,0) NOT NULL,
           
           --technical columns
@@ -94,7 +112,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.review_id IS ''T
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.title IS ''The title of the review''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.review_type IS ''The type of the review''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.description IS ''The description of the review''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.overall_rating IS ''The overall rating of the job''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.rating_overall IS ''The overall rating of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.salary_rating IS ''The salary rating of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.manager_rating IS ''The manager rating of the job''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.team_rating IS ''The team rating of the job''';
@@ -119,7 +137,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.review.deleted_flag IS 
 --DELETE SEQUENCE IF EXISTS;
 SELECT COUNT(*) INTO v_count
 FROM user_sequences
-WHERE sequence_name = 'seq_review_id';
+WHERE sequence_name = 'SEQ_REVIEW_ID';
 IF v_count > 0 THEN
     EXECUTE IMMEDIATE 'DROP SEQUENCE autonomous_db_owner.seq_review_id';
 END IF;
@@ -133,11 +151,11 @@ END IF;
   ';
 SELECT COUNT(*) INTO v_count
 FROM user_sequences
-WHERE sequence_name = 'seq_review_id';
+WHERE sequence_name = 'SEQ_REVIEW_ID';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The seq_review_id sequence wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The SEQ_REVIEW_ID sequence wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[3.] The seq_review_id sequence for primary key was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The SEQ_REVIEW_ID sequence for primary key was created.');
 
 --CREATE TRIGGER FOR PRIMARY KEY;
 --DELETE TRIGGER IF EXISTS;
@@ -145,10 +163,10 @@ SELECT COUNT(*) INTO v_count
 FROM user_triggers
 WHERE trigger_name = 'TRG_REVIEW_ID_PK';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_user_review_pk';
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_review_id_pk';
 END IF;
 --CREATE TRIGGER
-v_sql := 'CREATE OR REPLACE TRIGGER trg_user_review_pk
+v_sql := 'CREATE OR REPLACE TRIGGER trg_review_id_pk
           BEFORE INSERT ON autonomous_db_owner.review
           FOR EACH ROW
           WHEN (NEW.review_id IS NULL)
@@ -199,7 +217,52 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[5.] The TRG_REVIEW_TECH_COL trigger for technical columns was created.');
 
-DBMS_OUTPUT.PUT_LINE('[6.] The script running is done!');
+
+--CREATE TRIGGER FOR POPULATING THE EMPLOYEES RATING FROM JOB
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_EMPLOYEES_RATING_SYNC';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_employees_rating_sync';
+END IF;
+--CREATE TRIGGER
+v_sql := '  CREATE OR REPLACE TRIGGER autonomous_db_owner.trg_employees_rating_sync
+AFTER INSERT OR UPDATE OR DELETE ON autonomous_db_owner.review
+DECLARE
+BEGIN
+    /* 1. Actualizăm employees_rating pentru job-urile care AU review-uri */
+    UPDATE autonomous_db_owner.job j
+    SET j.employees_rating =
+        (
+            SELECT ROUND(AVG(r.rating_overall), 2)
+            FROM autonomous_db_owner.review r
+            WHERE r.job_id = j.job_id
+        )
+    WHERE EXISTS (
+        SELECT 1 FROM autonomous_db_owner.review r
+        WHERE r.job_id = j.job_id
+    );
+
+    /* 2. Pentru job-urile fără review-uri → employees_rating = 0 */
+    UPDATE autonomous_db_owner.job j
+    SET j.employees_rating = 0
+    WHERE NOT EXISTS (
+        SELECT 1 FROM autonomous_db_owner.review r
+        WHERE r.job_id = j.job_id
+    );
+END;';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_EMPLOYEES_RATING_SYNC';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_EMPLOYEES_RATING_SYNC trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[6.] The TRG_EMPLOYEES_RATING_SYNC trigger for populating the employees_rating column from job table.');
+
+DBMS_OUTPUT.PUT_LINE('[7.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
