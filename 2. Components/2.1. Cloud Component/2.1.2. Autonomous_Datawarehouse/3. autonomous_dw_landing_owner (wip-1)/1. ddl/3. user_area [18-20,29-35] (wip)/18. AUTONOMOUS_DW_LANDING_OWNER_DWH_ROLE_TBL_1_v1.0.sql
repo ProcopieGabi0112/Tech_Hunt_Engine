@@ -67,21 +67,21 @@ END IF;
 DBMS_OUTPUT.PUT_LINE('[3.] The DWH_ROLE table was created.');
 --CREATE COMMENTS FROM TABLE AND COLUMNS
 -- TABLE COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.role IS ''The table contains the roles that a user can have''';
+EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.dwh_role IS ''The table contains the roles that a user can have''';
 
 -- COLUMNS COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.role_id IS ''The primary key of the role table''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.name IS ''The name of the role''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.role_id IS ''The primary key of the role table''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.name IS ''The name of the role''';
 
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.creation_date IS ''Technical Column - The creation date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.created_by IS ''Technical Column - The user who created the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.last_update_date IS ''Technical Column - The last update date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.last_updated_by IS ''Technical Column - The user who updated the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.source_system IS ''Technical Column - The source system of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.sync_status IS ''Technical Column - The sync status of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.sync_version IS ''Technical Column - The sync version of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.role.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.creation_date IS ''Technical Column - The creation date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.created_by IS ''Technical Column - The user who created the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.last_update_date IS ''Technical Column - The last update date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.last_updated_by IS ''Technical Column - The user who updated the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.source_system IS ''Technical Column - The source system of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.sync_status IS ''Technical Column - The sync status of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.sync_version IS ''Technical Column - The sync version of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_role.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
 
 DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION

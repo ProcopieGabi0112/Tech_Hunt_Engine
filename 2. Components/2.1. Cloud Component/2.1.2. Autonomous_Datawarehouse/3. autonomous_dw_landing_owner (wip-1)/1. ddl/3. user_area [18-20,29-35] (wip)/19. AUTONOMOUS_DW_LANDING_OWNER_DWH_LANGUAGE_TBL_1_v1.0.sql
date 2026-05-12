@@ -71,21 +71,28 @@ END IF;
 DBMS_OUTPUT.PUT_LINE('[3.] The DWH_LANGUAGE table was created.');
 --CREATE COMMENTS FROM TABLE AND COLUMNS
 -- TABLE COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.language IS ''The table contains the languages that a user can have''';
+EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.dwh_language IS ''The table contains the spoken languages of students''';
 
 -- COLUMNS COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.language_id IS ''The primary key of the language table''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.name IS ''The name of the language''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.lang_code IS ''The primary key of the language table''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.name IS ''The name of the language''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.iso_code IS ''The ISO code of the language''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.no_native_speakers IS ''The number of native speakers''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.no_speakers IS ''The number of speakers''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.no_companies IS ''The number of campanies that use this language''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.no_countries IS ''The number of countries where you can speak this language''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.rating IS ''The rating of this language, calculated based on speakers and country spread''';
 
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.creation_date IS ''Technical Column - The creation date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.created_by IS ''Technical Column - The user who created the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.last_update_date IS ''Technical Column - The last update date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.last_updated_by IS ''Technical Column - The user who updated the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.source_system IS ''Technical Column - The source system of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.sync_status IS ''Technical Column - The sync status of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.sync_version IS ''Technical Column - The sync version of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.language.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
+
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.creation_date IS ''Technical Column - The creation date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.created_by IS ''Technical Column - The user who created the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.last_update_date IS ''Technical Column - The last update date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.last_updated_by IS ''Technical Column - The user who updated the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.source_system IS ''Technical Column - The source system of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.sync_status IS ''Technical Column - The sync status of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.sync_version IS ''Technical Column - The sync version of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_language.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
 
 DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION
