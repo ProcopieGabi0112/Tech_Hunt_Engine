@@ -23,41 +23,41 @@ IF v_count = 0 THEN
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDB"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE dw_job_level IF EXIST;
+--DELETE TABLE dwh_job_level IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_tables
 WHERE owner = 'AUTONOMOUS_DW_LANDING_OWNER'
 AND table_name = 'DWH_JOB_LEVEL'
 AND tablespace_name = 'DATA';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP TABLE autonomous_dw_landing_owner.dw_job_level CASCADE CONSTRAINTS';
+    EXECUTE IMMEDIATE 'DROP TABLE autonomous_dw_landing_owner.dwh_job_level CASCADE CONSTRAINTS';
 END IF;
 --CREATE DWH_JOB_LEVEL TABLE;
 v_sql := q'[
-        CREATE TABLE autonomous_dw_landing_owner.dw_job_level (
+        CREATE TABLE autonomous_dw_landing_owner.dwh_job_level (
 
           --business columns
-          dw_job_level_id NUMBER(10,0),
+          dwh_job_level_id NUMBER(10,0),
           name VARCHAR2(50) NOT NULL, 
           complexity_score NUMBER(5,2) NOT NULL,
           code VARCHAR2(50) NOT NULL, 
           description VARCHAR2(200), 
           
           --technical columns
-          creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          creation_date         TIMESTAMP NOT NULL,
           created_by            VARCHAR2(50) NOT NULL,
-          last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          last_update_date      TIMESTAMP NOT NULL,
           last_updated_by       VARCHAR2(50) NOT NULL,
-          source_system         VARCHAR2(20) DEFAULT 'db_env' NOT NULL CHECK (source_system IN ('db_env','dw_env','pg_env')),
-          sync_status           VARCHAR2(20) DEFAULT 'synced' NOT NULL CHECK (sync_status IN ('synced','not_synced')),
-          sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
-          last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-          deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y'))
+          source_system         VARCHAR2(20) NOT NULL CHECK (source_system IN ('db_env','dw_env','pg_env')),
+          sync_status           VARCHAR2(20) NOT NULL CHECK (sync_status IN ('synced','not_synced')),
+          sync_version          NUMBER(38,0) NOT NULL,
+          last_synced_at        TIMESTAMP CURRENT_TIMESTAMP NOT NULL,
+          deleted_flag          VARCHAR2(1) NOT NULL CHECK (deleted_flag IN ('N','Y'))
         )
     ]';
  
 EXECUTE IMMEDIATE v_sql;
-EXECUTE IMMEDIATE 'GRANT SELECT ON autonomous_dw_landing_owner.dw_job_level TO autonomous_dw_owner';
+EXECUTE IMMEDIATE 'GRANT SELECT ON autonomous_dw_landing_owner.dwh_job_level TO autonomous_dw_owner';
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_tables
@@ -70,24 +70,24 @@ END IF;
 DBMS_OUTPUT.PUT_LINE('[2.] The DWH_JOB_LEVEL table was created.');
 --CREATE COMMENTS FOR TABLE AND COLUMNS
 -- TABLE COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.dw_job_level IS ''The table contains all the levels you can have on a job''';
+EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.dwh_job_level IS ''The table contains all the levels you can have on a job''';
 
 -- COLUMNS COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.job_level_id IS ''The id of the job level''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.name IS ''The name of the job level''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.complexity_score IS ''The complexity score of the job level''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.code IS ''The code of the job level''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.description IS ''The desciption of the job level''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.job_level_id IS ''The id of the job level''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.name IS ''The name of the job level''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.complexity_score IS ''The complexity score of the job level''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.code IS ''The code of the job level''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.description IS ''The desciption of the job level''';
 
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.creation_date IS ''Technical Column - The creation date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.created_by IS ''Technical Column - The user who created the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.last_update_date IS ''Technical Column - The last update date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.last_updated_by IS ''Technical Column - The user who updated the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.source_system IS ''Technical Column - The source system of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.sync_status IS ''Technical Column - The sync status of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.sync_version IS ''Technical Column - The sync version of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_job_level.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.creation_date IS ''Technical Column - The creation date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.created_by IS ''Technical Column - The user who created the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.last_update_date IS ''Technical Column - The last update date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.last_updated_by IS ''Technical Column - The user who updated the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.source_system IS ''Technical Column - The source system of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.sync_status IS ''Technical Column - The sync status of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.sync_version IS ''Technical Column - The sync version of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_job_level.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
 
 DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION
