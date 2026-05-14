@@ -108,6 +108,7 @@ v_sql := q'[
                      FROM autonomous_dw_landing_owner.dwh_specialization 
                      WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
                     );
+                    
     IF v_count = 0 THEN
         UPDATE autonomous_dw_tech_owner.dwh_processes_notif
         SET status = 'ERROR',

@@ -23,18 +23,18 @@ IF v_count = 0 THEN
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDB"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE dw_department IF EXIST;
+--DELETE TABLE dwh_department IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_tables
 WHERE owner = 'AUTONOMOUS_DW_LANDING_OWNER'
 AND table_name = 'DWH_DEPARTMENT'
 AND tablespace_name = 'DATA';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP TABLE autonomous_dw_landing_owner.dw_department CASCADE CONSTRAINTS';
+    EXECUTE IMMEDIATE 'DROP TABLE autonomous_dw_landing_owner.dwh_department CASCADE CONSTRAINTS';
 END IF;
 --CREATE DWH_DEPARTMENT TABLE;
 v_sql := q'[
-        CREATE TABLE autonomous_dw_landing_owner.dw_department (
+        CREATE TABLE autonomous_dw_landing_owner.dwh_department (
 
           --business columns
           department_id NUMBER(38,0),
@@ -47,44 +47,27 @@ v_sql := q'[
           avg_salary NUMBER(15,2) NOT NULL,
           growth_potential NUMBER(5,2) NOT NULL,
           training_budget NUMBER(15,2) NOT NULL,
-          no_open_positions NUMBER(10,0) DEFAULT 0,
+          no_open_positions NUMBER(10,0),
           turnover_rate NUMBER(5,2) NOT NULL,
-          rating NUMBER(5,2) GENERATED ALWAYS AS ( 
-LEAST(GREATEST(ROUND(( 
-                            /* 20% eficiență bugetară */ 
-0.20 * NVL(1 - (operational_costs / NULLIF(annual_budget, 0)), 0) + 
-       /* 20% randament financiar */ 
-0.20 * NVL(revenue_generated / NULLIF(expenses, 0), 0) + 
-         /* 10% cost mediu per angajat (inversat) */ 
-0.10 * NVL(1 - (avg_salary / 10000), 0) + 
-              /* 15% potențial de creștere */ 
-0.15 * NVL(growth_potential / 100, 0) + 
-          /* 10% investiție în training */ 
-0.10 * NVL(training_budget / NULLIF(annual_budget, 0), 0) + 
-           /* 10% poziții deschise vs angajați */ 
-0.10 * NVL(1 - (no_open_positions / NULLIF(no_employees, 0)), 0) + 
-           /* 15% retenție (invers turnover) */ 
-0.15 * NVL(1 - (turnover_rate / 100), 0) ) * 100, 2), 0), 100) 
-) VIRTUAL,
-
+          rating NUMBER(5,2),
           company_id NUMBER(38,0) NOT NULL,
           department_type_code NUMBER(38,0) NOT NULL,
           
           --technical columns
-          creation_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          creation_date         TIMESTAMP NOT NULL,
           created_by            VARCHAR2(50) NOT NULL,
-          last_update_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          last_update_date      TIMESTAMP NOT NULL,
           last_updated_by       VARCHAR2(50) NOT NULL,
-          source_system         VARCHAR2(20) DEFAULT 'db_env' NOT NULL CHECK (source_system IN ('db_env','dw_env','pg_env')),
-          sync_status           VARCHAR2(20) DEFAULT 'synced' NOT NULL CHECK (sync_status IN ('synced','not_synced')),
-          sync_version          NUMBER(38,0) DEFAULT 1 NOT NULL,
-          last_synced_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-          deleted_flag          VARCHAR2(1) DEFAULT 'N' NOT NULL CHECK (deleted_flag IN ('N','Y')), 
+          source_system         VARCHAR2(20) NOT NULL CHECK (source_system IN ('db_env','dw_env','pg_env')),
+          sync_status           VARCHAR2(20) NOT NULL CHECK (sync_status IN ('synced','not_synced')),
+          sync_version          NUMBER(38,0) NOT NULL,
+          last_synced_at        TIMESTAMP  NOT NULL,
+          deleted_flag          VARCHAR2(1) NOT NULL CHECK (deleted_flag IN ('N','Y')), 
         )
     ]';
  
 EXECUTE IMMEDIATE v_sql;
-EXECUTE IMMEDIATE 'GRANT SELECT ON autonomous_dw_landing_owner.dw_department TO autonomous_dw_owner';
+EXECUTE IMMEDIATE 'GRANT SELECT ON autonomous_dw_landing_owner.dwh_department TO autonomous_dw_owner';
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_tables
@@ -97,34 +80,34 @@ END IF;
 DBMS_OUTPUT.PUT_LINE('[2.] The DWH_DEPARTMENT table was created.');
 --CREATE COMMENTS FOR TABLE AND COLUMNS
 -- TABLE COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.dw_department IS ''The table contains all the informations about the companies from application. Some posibile values like BCR,Thales, Ubisoft,etc''';
+EXECUTE IMMEDIATE 'COMMENT ON TABLE autonomous_dw_landing_owner.dwh_department IS ''The table contains all the informations about the companies from application. Some posibile values like BCR,Thales, Ubisoft,etc''';
 
 -- COLUMNS COMMENT
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.department_id IS ''The id of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.description IS ''The description of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.annual_budget IS ''The annual budget of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.operational_costs IS ''The operational costs of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.expenses IS ''The expenses of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.revenue_generated IS ''The revenue generated of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.no_employees IS ''The employees number of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.avg_salary IS ''The average salary of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.growth_potential IS ''The growth potential of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.training_budget IS ''The training budget of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.no_open_positions IS ''The number of open positions from the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.turnover_rate IS ''The turnover rate from the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.rating IS ''The rating of the department''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.company_id IS ''The id of the company which contains the depertment''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.department_type_code IS ''The code of the depertment type''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.department_id IS ''The id of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.description IS ''The description of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.annual_budget IS ''The annual budget of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.operational_costs IS ''The operational costs of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.expenses IS ''The expenses of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.revenue_generated IS ''The revenue generated of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.no_employees IS ''The employees number of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.avg_salary IS ''The average salary of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.growth_potential IS ''The growth potential of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.training_budget IS ''The training budget of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.no_open_positions IS ''The number of open positions from the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.turnover_rate IS ''The turnover rate from the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.rating IS ''The rating of the department''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.company_id IS ''The id of the company which contains the depertment''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.department_type_code IS ''The code of the depertment type''';
 
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.creation_date IS ''Technical Column - The creation date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.created_by IS ''Technical Column - The user who created the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.last_update_date IS ''Technical Column - The last update date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.last_updated_by IS ''Technical Column - The user who updated the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.source_system IS ''Technical Column - The source system of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.sync_status IS ''Technical Column - The sync status of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.sync_version IS ''Technical Column - The sync version of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dw_department.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.creation_date IS ''Technical Column - The creation date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.created_by IS ''Technical Column - The user who created the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.last_update_date IS ''Technical Column - The last update date of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.last_updated_by IS ''Technical Column - The user who updated the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.source_system IS ''Technical Column - The source system of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.sync_status IS ''Technical Column - The sync status of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.sync_version IS ''Technical Column - The sync version of the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.last_synced_at IS ''Technical Column - The date when the record was last time synced''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_landing_owner.dwh_department.deleted_flag IS ''Technical Column - The flag indicating if the record is deleted or not''';
 
 DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION
