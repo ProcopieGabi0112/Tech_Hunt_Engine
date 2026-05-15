@@ -1,5 +1,5 @@
---AUTONOMOUS_DW_OUT_OWNER_DWH_USER_LOCATION_DIM_V_VW_1_v1.0.0
---"DWH_USER_LOCATION_DIM_V TABLE"
+--AUTONOMOUS_DW_OUT_OWNER_DWH_INSTITUTION_LOCATION_DIM_V_VW_1_v1.0.0
+--"DWH_INSTITUTION_LOCATION_DIM_V TABLE"
 SET SERVEROUTPUT ON;
 DECLARE
   v_count NUMBER;
@@ -18,36 +18,41 @@ IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The environment is wrong. Please check the user.');
   END IF;
   DBMS_OUTPUT.PUT_LINE('[2.] The environment is preparing...');
--- Current_User: "AUTONOMOUS_DW_OWNER"	
+-- Current_User: "AUTONOMOUS_DW_OUT_OWNER"	
 -- Database_name: "G90CE4847B77DFA_TECHHUNTENGINEDW"	
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDW"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE dwh_user_location_dim IF EXIST;
+--DELETE TABLE dwh_institution_location_dim IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_views
 WHERE owner = 'AUTONOMOUS_DW_OUT_OWNER'
-AND view_name = 'DWH_USER_LOCATION_DIM_V';
+AND view_name = 'DWH_INSTITUTION_LOCATION_DIM_V';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP VIEW autonomous_dw_out_owner.dwh_user_location_dim_v CASCADE CONSTRAINTS';
+    EXECUTE IMMEDIATE 'DROP VIEW autonomous_dw_out_owner.dwh_institution_location_dim_v CASCADE CONSTRAINTS';
 END IF;
---CREATE DWH_USER_LOCATION_DIM_V TABLE;
+--CREATE DWH_INSTITUTION_LOCATION_DIM_V TABLE;
 v_sql := q'[
-CREATE OR REPLACE VIEW autonomous_dw_out_owner.dwh_user_location_dim_v AS
+CREATE OR REPLACE VIEW autonomous_dw_out_owner.dwh_institution_location_dim_v AS
 SELECT 
-user_location_key,
+institution_location_key, 
 location_address_code,
 location_address,
 postal_code,
 location_details,
 city_name,
-capital_city_flag,
-city_position,
-city_stats,
+capital_city_flag, 
+city_latitude,
+city_longitude,
+city_population,
+city_area,
 administrative_unit_name,
-administrative_unit_stats,
+admin_unit_no_cities,
+admin_unit_population,
+admin_unit_area,
 country_name,
-country_stats,
+country_population,
+country_area,
 country_rating,
 official_language_name,
 currency_name,
@@ -60,18 +65,18 @@ valid_from,
 valid_to,
 source_system,
 deleted_flag
-FROM autonomous_dw_owner.dwh_user_location_dim;
+FROM autonomous_dw_owner.dwh_institution_location_dim;
 ]';
 EXECUTE IMMEDIATE v_sql;
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_views
-WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
-AND view_name = 'DWH_USER_LOCATION_DIM_V';
+WHERE owner = 'AUTONOMOUS_DW_OUT_OWNER'
+AND view_name = 'DWH_INSTITUTION_LOCATION_DIM_V';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The DWH_USER_LOCATION_DIM_V view wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The DWH_INSTITUTION_LOCATION_DIM_V view wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[3.] The DWH_USER_LOCATION_DIM_V view was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The DWH_INSTITUTION_LOCATION_DIM_V view was created.');
 
 DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION

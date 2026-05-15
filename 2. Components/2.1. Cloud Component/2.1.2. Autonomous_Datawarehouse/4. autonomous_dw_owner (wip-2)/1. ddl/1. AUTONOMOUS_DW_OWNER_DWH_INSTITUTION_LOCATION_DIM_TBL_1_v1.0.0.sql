@@ -46,12 +46,17 @@ v_sql := q'[
           location_details VARCHAR2(200),
           city_name VARCHAR2(100) NOT NULL,
           capital_city_flag VARCHAR2(1) NOT NULL CHECK (capital_city_flag IN ('Y','N')),
-          city_position VARCHAR2(50) NOT NULL,
-          city_stats VARCHAR2(200) NOT NULL,
+          city_latitude NUMBER(15,9) NOT NULL,
+          city_longitude NUMBER(15,9) NOT NULL,
+          city_population NUMBER(15,0) NOT NULL,
+          city_area NUMBER(15,0) NOT NULL,
           administrative_unit_name VARCHAR2(150) NOT NULL,
-          administrative_unit_stats VARCHAR2(200) NOT NULL,
+          admin_unit_no_cities NUMBER(10,0) NOT NULL,
+          admin_unit_population NUMBER(15,0) NOT NULL,
+          admin_unit_area NUMBER(15,0) NOT NULL,
           country_name VARCHAR2(100) NOT NULL,
-          country_stats VARCHAR2(200) NOT NULL,
+          country_population NUMBER(15,0) NOT NULL,
+          country_area NUMBER(15,0) NOT NULL,
           country_rating NUMBER(5,2) NOT NULL,
           official_language_name VARCHAR2(60) NOT NULL,
           currency_name VARCHAR2(200) NOT NULL,
@@ -92,12 +97,17 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_locatio
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.location_details IS ''The details of the location address''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.city_name IS ''The name of the city of location address.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.capital_city_flag IS ''The flag indicating if the city is the capital''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.city_position IS ''The geographical position of the location address''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.city_stats IS ''The city stats of location address''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.city_latitude IS '' The latitude position of the city  ''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.city_longitude IS '' The longitude positon of the city  ''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.city_population IS ''The population of the city''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.city_area IS ''The area of the city''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.administrative_unit_name IS ''The name of the administrative unit of the location address''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.administrative_unit_stats IS ''The administrative unit stats of location address''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.admin_unit_no_cities IS ''The number of cities into the administrative unit''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.admin_unit_population IS ''The population of the administrative unit''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.admin_unit_area IS ''The area of the administrative unit''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.country_name IS ''The country name of location address''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.country_stats IS ''The country stats of location address''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.country_population IS ''The population of the country''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.country_area IS ''The area of the country''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.country_rating IS ''The country rating of location address''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.official_language_name IS ''The name of the official language from that location''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_institution_location_dim.currency_name IS ''The name of the currency from that location''';
@@ -223,67 +233,3 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
-
-
-INSERT INTO autonomous_dw_owner.dwh_institution_location_dim (
-    location_address_code,
-    location_address,
-    postal_code,
-    location_details,
-    city_name,
-    capital_city_flag,
-    city_position,
-    city_stats,
-    administrative_unit_name,
-    administrative_unit_stats,
-    country_name,
-    country_stats,
-    country_rating,
-    official_language_name,
-    currency_name,
-    region_name
-)
-SELECT
-    loc.location_id AS location_address_code,
-    loc.street_name || ' ' || loc.street_number AS location_address,
-    loc.postal_code AS postal_code,
-    TRIM(
-        NVL(loc.building, '') || ' ' ||
-        NVL(loc.staircase, '') || ' ' ||
-        NVL(loc.floor, '') || ' ' ||
-        NVL(loc.appartment_number,'')
-    ) AS location_details,
-    c.name AS city_name,
-    CASE WHEN c.is_capital = 'Y' THEN 'Y' ELSE 'N' END AS capital_city_flag,
-    c.latitude || ',' || c.longitude AS city_position,
-    c.population || ' people, ' || c.area || ' km2' AS city_stats,
-    aut.name ||' '||au.name AS administrative_unit_name,
-    au.no_cities || ' cities, '||au.population || ' people, ' || au.area || ' km2,' AS administrative_unit_stats,
-    co.name AS country_name,
-    co.population || ' people, ' || co.area || ' km2' AS country_stats,
-    co.rating AS country_rating,
-    lang.name AS official_language_name,
-    cur.name AS currency_name,
-    reg.name AS region_name
-FROM autonomous_dw_landing_owner.dwh_user_spec us
-JOIN autonomous_dw_landing_owner.dwh_specialization sp
-    ON us.specialization_id = sp.specialization_id
-JOIN autonomous_dw_landing_owner.dwh_institution inst
-    ON sp.institution_id = inst.institution_id
-JOIN autonomous_dw_landing_owner.dwh_location loc
-    ON inst.location_id = loc.location_id
-JOIN autonomous_dw_landing_owner.dwh_city c
-    ON loc.city_code = c.city_code
-JOIN autonomous_dw_landing_owner.dwh_administrative_unit au
-    ON c.administrative_unit_id = au.administrative_unit_id
-JOIN autonomous_dw_landing_owner.dwh_administrative_unit_type aut
-    ON au.administrative_unit_type_id = aut.administrative_unit_type_id    
-JOIN autonomous_dw_landing_owner.dwh_country co
-    ON au.country_id = co.country_id
-JOIN autonomous_dw_landing_owner.dwh_region reg
-    ON co.region_id = reg.region_id
-LEFT JOIN autonomous_dw_landing_owner.dwh_language lang
-    ON co.official_lang_code = lang.lang_code
-LEFT JOIN autonomous_dw_landing_owner.dwh_currency cur
-    ON co.currency_code = cur.currency_code;
-    

@@ -41,13 +41,18 @@ location_address,
 postal_code,
 location_details,
 city_name,
-capital_city_flag,
-city_position,
-city_stats,
+capital_city_flag, 
+city_latitude,
+city_longitude,
+city_population,
+city_area,
 administrative_unit_name,
-administrative_unit_stats,
+admin_unit_no_cities,
+admin_unit_population,
+admin_unit_area,
 country_name,
-country_stats,
+country_population,
+country_area,
 country_rating,
 official_language_name,
 currency_name,
@@ -66,7 +71,7 @@ EXECUTE IMMEDIATE v_sql;
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_views
-WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
+WHERE owner = 'AUTONOMOUS_DW_OUT_OWNER'
 AND view_name = 'DWH_JOB_LOCATION_DIM_V';
 IF v_count = 0 THEN
     RAISE_APPLICATION_ERROR(-20001,'The DWH_JOB_LOCATION_DIM_V view wasnt created properly.');
