@@ -1,5 +1,5 @@
---AUTONOMOUS_DW_OUT_OWNER_DWH_USER_SKILL_DIM_V_VW_1_v1.0.0
---"DWH_USER_SKILL_DIM_V TABLE"
+--AUTONOMOUS_DW_OUT_OWNER_DWH_JOB_SKILL_DIM_V_VW_1_v1.0.0
+--"DWH_JOB_SKILL_DIM_V TABLE"
 SET SERVEROUTPUT ON;
 DECLARE
   v_count NUMBER;
@@ -23,27 +23,31 @@ IF v_count = 0 THEN
 -- Container_Name: "G90CE4847B77DFA_TECHHUNTENGINEDW"
 -- Database_Type: "Pluggable Database (PDB)"
 
---DELETE TABLE dwh_user_skill_dim IF EXIST;
+--DELETE TABLE dwh_certification_bridge IF EXIST;
 SELECT COUNT(*) INTO v_count
 FROM all_views
 WHERE owner = 'AUTONOMOUS_DW_OUT_OWNER'
-AND view_name = 'DWH_USER_SKILL_DIM_V';
+AND view_name = 'DWH_JOB_SKILL_DIM_V';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP VIEW autonomous_dw_out_owner.dwh_user_skill_dim_v CASCADE CONSTRAINTS';
+    EXECUTE IMMEDIATE 'DROP VIEW autonomous_dw_out_owner.dwh_job_skill_dim_v CASCADE CONSTRAINTS';
 END IF;
---CREATE DWH_USER_SKILL_DIM_V TABLE;
+--CREATE DWH_CERTIFICATION_BRIDGE_V TABLE;
 v_sql := q'[
-CREATE OR REPLACE VIEW autonomous_dw_out_owner.dwh_user_skill_dim_v AS
+CREATE OR REPLACE VIEW autonomous_dw_out_owner.dwh_job_skill_dim_v AS
 SELECT 
-skill_key,
+job_skill_key,
 skill_code,
 skill_name,
 skill_rating,
+version_code,
 version_name,
 version_details,
+version_rating,
+technology_code,
 technology_name,
 technology_details,
 technology_rating,
+technology_type_code,
 technology_type_name,
 technology_type_rating,
 overall_skill_rating,
@@ -55,18 +59,18 @@ valid_from,
 valid_to,
 source_system,
 deleted_flag
-FROM autonomous_dw_owner.dwh_user_skill_dim;
+FROM autonomous_dw_owner.dwh_job_skill_dim;
 ]';
 EXECUTE IMMEDIATE v_sql;
 --[1.] VERIFY IF THE TABLE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
 FROM all_views
-WHERE owner = 'AUTONOMOUS_DB_OUT_OWNER'
-AND view_name = 'DWH_USER_SKILL_DIM_V';
+WHERE owner = 'AUTONOMOUS_DW_OUT_OWNER'
+AND view_name = 'DWH_JOB_SKILL_DIM_V';
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The DWH_USER_SKILL_DIM_V view wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The DWH_JOB_SKILL_DIM_V view wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[3.] The DWH_USER_SKILL_DIM_V view was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The DWH_JOB_SKILL_DIM_V view was created.');
 
 DBMS_OUTPUT.PUT_LINE('[4.] The script running is done!');
 EXCEPTION
