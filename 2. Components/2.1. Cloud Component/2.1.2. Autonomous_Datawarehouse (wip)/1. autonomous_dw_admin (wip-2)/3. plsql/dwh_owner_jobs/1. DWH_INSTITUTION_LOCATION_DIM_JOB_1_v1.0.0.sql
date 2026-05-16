@@ -186,7 +186,9 @@ v_sql := q'[
         d.country_rating            = s.country_rating,
         d.official_language_name    = s.official_language_name,
         d.currency_name             = s.currency_name,
-        d.region_name               = s.region_name
+        d.region_name               = s.region_name,
+        d.deleted_flag              = 'N',
+        d.last_update_date          = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
         location_address_code,
@@ -209,7 +211,10 @@ v_sql := q'[
         country_rating,
         official_language_name,
         currency_name,
-        region_name
+        region_name,
+        deleted_flag,
+        creation_date,
+        last_update_date
     )
     VALUES 
     (
@@ -233,7 +238,10 @@ v_sql := q'[
         s.country_rating,
         s.official_language_name,
         s.currency_name,
-        s.region_name
+        s.region_name,
+        'N',
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     );
     COMMIT;
 
@@ -438,7 +446,7 @@ v_sql := q'[
         d.city_name                 = s.city_name,
         d.capital_city_flag         = s.capital_city_flag,
         d.city_latitude             = s.city_latitude,
-        d.city_longitude             = s.city_longitude,
+        d.city_longitude            = s.city_longitude,
         d.city_population           = s.city_population,
         d.city_area                 = s.city_area,
         d.administrative_unit_name  = s.administrative_unit_name,
@@ -451,7 +459,9 @@ v_sql := q'[
         d.country_rating            = s.country_rating,
         d.official_language_name    = s.official_language_name,
         d.currency_name             = s.currency_name,
-        d.region_name               = s.region_name
+        d.region_name               = s.region_name,
+        d.deleted_flag              = 'N',
+        d.last_update_date          = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
         location_address_code,
@@ -474,7 +484,10 @@ v_sql := q'[
         country_rating,
         official_language_name,
         currency_name,
-        region_name
+        region_name,
+        deleted_flag,
+        creation_date,
+        last_update_date
     )
     VALUES 
     (
@@ -498,8 +511,29 @@ v_sql := q'[
         s.country_rating,
         s.official_language_name,
         s.currency_name,
-        s.region_name
+        s.region_name,
+        'N',
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     );
+
+    UPDATE autonomous_dw_owner.dwh_institution_location_dim d
+    SET
+           d.deleted_flag = 'Y',
+           d.last_update_date = CURRENT_TIMESTAMP
+    WHERE NOT EXISTS (
+                       SELECT 1
+                       FROM autonomous_dw_landing_owner.dwh_user_spec us
+                           JOIN autonomous_dw_landing_owner.dwh_specialization sp 
+                                ON us.specialization_id = sp.specialization_id
+                           JOIN autonomous_dw_landing_owner.dwh_institution inst 
+                                ON sp.institution_id = inst.institution_id
+                           JOIN autonomous_dw_landing_owner.dwh_location loc 
+                                ON inst.location_id = loc.location_id
+                       WHERE loc.location_id = d.location_address_code
+                     )
+    AND d.deleted_flag = 'N';
+
     COMMIT;
 
 ---------------------------------------------------------------------- 
@@ -533,7 +567,7 @@ EXCEPTION
 END;
  ]';
 
-  EXECUTE IMMEDIATE v_sql;
+EXECUTE IMMEDIATE v_sql;
 
 --[1.] VERIFY IF THE PROCEDURE WAS CREATED RIGHT
 SELECT COUNT(*) INTO v_count
@@ -582,5 +616,3 @@ EXCEPTION
 END;
 /
 
-SELECT * FROM autonomous_dw_tech_owner.dwh_processes_notif
-ORDER BY start_timestamp DESC;
