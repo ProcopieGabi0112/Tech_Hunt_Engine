@@ -40,28 +40,45 @@ v_sql := q'[
 
           --business columns
           job_skill_key          NUMBER(38,0) PRIMARY KEY,
-          skill_code              NUMBER(38,0) NOT NULL,
-          skill_name              VARCHAR2(150) NOT NULL,
-          skill_rating            NUMBER(5,2) NOT NULL,
-          version_code            NUMBER(38,0) NOT NULL,
-          version_name            VARCHAR2(100) NOT NULL,
-          version_details         VARCHAR2(400) NOT NULL,
-          version_rating          NUMBER(5,2) NOT NULL,
-          technology_code         NUMBER(38,0) NOT NULL,
-          technology_name         VARCHAR2(100) NOT NULL,
-          technology_details      VARCHAR2(400) NOT NULL,
-          technology_rating       NUMBER(5,2) NOT NULL,
-          technology_type_code    NUMBER(38,0) NOT NULL,
-          technology_type_name    VARCHAR2(50) NOT NULL,
-          technology_type_rating  NUMBER(5,2) NOT NULL,
-           overall_skill_rating    GENERATED ALWAYS AS (
-        ROUND(  (
-                NVL(skill_rating,0) +
-                NVL(version_rating,0) +
-                NVL(technology_rating,0) +
-                NVL(technology_type_rating,0)
-            ) / 4,
-            2)) VIRTUAL,
+          
+          --skill columns
+          skill_code                            NUMBER(38,0) NOT NULL,
+          skill_name                            VARCHAR2(150) NOT NULL,
+          prerequisite_knowledge_score          NUMBER(5,2) NOT NULL,
+          learning_difficulty_score             NUMBER(5,2) NOT NULL,
+          implementation_difficulty_score       NUMBER(5,2) NOT NULL,
+          cross_platform_applicability_score    NUMBER(5,2) NOT NULL,
+          skill_rating                          NUMBER(5,2) NOT NULL,
+          
+          --version columns
+          version_code                          NUMBER(38,0) NOT NULL,
+          version_name                          VARCHAR2(100) NOT NULL,
+          version_release_date                  DATE,
+          version_end_of_life                   DATE,
+          version_age                           NUMBER(5,0),
+          developer_popularity_score            NUMBER(5,2) NOT NULL,
+          community_support_score               NUMBER(5,2) NOT NULL,
+          industry_usage_score                  NUMBER(5,2) NOT NULL,
+          knowledge_score                       NUMBER(5,2) NOT NULL,
+          version_skill_rating                  NUMBER(5,2) NOT NULL,
+          version_rating                        NUMBER(5,2) NOT NULL,
+         
+          --technology table
+          technology_code                       NUMBER(38,0) NOT NULL,
+          technology_name                       VARCHAR2(100) NOT NULL,
+          technology_rating                     NUMBER(5,2) NOT NULL,
+          
+          --technology_type table
+          technology_type_code                  NUMBER(38,0) NOT NULL,
+          technology_type_name                  VARCHAR2(50) NOT NULL,
+          technology_type_rating                NUMBER(5,2) NOT NULL,
+          overall_skill_rating GENERATED ALWAYS AS (
+                                                      ROUND(  (
+                                                                NVL(skill_rating,0) +
+                                                                NVL(version_rating,0) +
+                                                                NVL(technology_rating,0) +
+                                                                NVL(technology_type_rating,0)
+                                                    ) / 4, 2)) VIRTUAL,
           
           --technical columns
           creation_date         TIMESTAMP NOT NULL,
@@ -92,16 +109,27 @@ DBMS_OUTPUT.PUT_LINE('[3.] The DWH_JOB_SKILL_DIM table was created.');
 EXECUTE IMMEDIATE 'COMMENT ON TABLE  autonomous_dw_owner.dwh_job_skill_dim IS ''The table contains information about the skill that a user know.''';
 -- BUSINESS COLUMNS COMMENT                              
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.job_skill_key IS ''The Surrogate key of the table''';
+
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.skill_code IS ''The primary key from skill table''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.skill_name IS ''The name of the skill''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.prerequisite_knowledge_score IS ''The score of the prerequisite knowledge that a user should know before learn this skill''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.learning_difficulty_score IS ''The score of the learning difficulty of that skill''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.implementation_difficulty_score IS ''The score of the implementation difficulty of that skill''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.cross_platform_applicability_score IS ''The score of the cross platform applicability of that skill''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.skill_rating IS ''The rating of the skill''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_code IS ''The primary key from version table''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_name IS ''The name of the version''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_details IS ''The details about version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_release_date IS ''The release date of the skill version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_end_of_life IS ''The end of life date of the skill version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_age IS ''The age of the skill version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.developer_popularity_score IS ''The score of the developer popularity of the skill version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.community_support_score IS ''The score of the community support of the skill version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.industry_usage_score IS ''The score of the industry usage of the skill version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.knowledge_score IS ''The score of the knowledge of the skill version''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_skill_rating IS ''The rating of the version skills''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.version_rating IS ''The rating of the version''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.technology_code IS ''The primary key from technology table''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.technology_name IS ''The name of the technology''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.technology_details IS ''The details about technology''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.technology_rating IS ''The rating of the technology''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.technology_type_code IS ''The primary key from technology type table''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.technology_type_name IS ''The name of the technology type''';
@@ -110,7 +138,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.overa
 
 -- TECHNICAL COLUMNS COMMENT                             
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.creation_date IS ''Technical Column - The creation date of the record''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.created_by IS ''Technical Column - The job who created the record''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.created_by IS ''Technical Column - The user who created the record''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.last_update_date IS ''Technical Column - The last update date of the record''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.last_updated_by IS ''Technical Column - The user who updated the record''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_job_skill_dim.valid_from IS ''Technical Column - The timestamp indicating when the record becomes effective in the data warehouse.''';
@@ -221,8 +249,39 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[6.] The TRG_DWH_JOB_SKILL_DIM_TECH_COL trigger for technical columns was created.');
 
+--CREATE TRIGGER FOR POPULATING job_version_age COLUMN
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_JOB_VERSION_AGE_CALC';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_dw_owner.trg_job_version_age_calc';
+END IF;
+--CREATE TRIGGER
+v_sql := '  CREATE OR REPLACE TRIGGER trg_job_version_age_calc
+BEFORE INSERT OR UPDATE ON autonomous_dw_owner.dwh_job_skill_dim
+FOR EACH ROW
+BEGIN
+    :NEW.version_age :=
+        ROUND(
+            MONTHS_BETWEEN(
+                NVL(:NEW.version_end_of_life, TRUNC(CURRENT_DATE)),
+                :NEW.version_release_date
+            ) / 12
+        );
+END;
+';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_JOB_VERSION_AGE_CALC';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_JOB_VERSION_AGE_CALC trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[7.] The TRG_JOB_VERSION_AGE_CALC trigger for populating version_age column was created.');
 
-DBMS_OUTPUT.PUT_LINE('[7.] The script running is done!');
+DBMS_OUTPUT.PUT_LINE('[8.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
