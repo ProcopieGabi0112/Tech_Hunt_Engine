@@ -54,7 +54,14 @@ v_sql := q'[
           technology_type_code    NUMBER(38,0) NOT NULL,
           technology_type_name    VARCHAR2(50) NOT NULL,
           technology_type_rating  NUMBER(5,2) NOT NULL,
-          overall_skill_rating    NUMBER(5,2) NOT NULL,
+           overall_skill_rating    GENERATED ALWAYS AS (
+        ROUND(  (
+                NVL(skill_rating,0) +
+                NVL(version_rating,0) +
+                NVL(technology_rating,0) +
+                NVL(technology_type_rating,0)
+            ) / 4,
+            2)) VIRTUAL,
           
           --technical columns
           creation_date         TIMESTAMP NOT NULL,
