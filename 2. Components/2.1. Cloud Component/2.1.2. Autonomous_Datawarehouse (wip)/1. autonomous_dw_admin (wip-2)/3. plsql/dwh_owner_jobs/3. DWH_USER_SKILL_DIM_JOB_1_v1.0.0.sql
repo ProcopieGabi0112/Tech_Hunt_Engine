@@ -86,10 +86,6 @@ v_sql := q'[
                    SELECT 1 
                    FROM autonomous_dw_landing_owner.dwh_technology_dependency 
                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                    SELECT 1 
-                    FROM autonomous_dw_landing_owner.dwh_region 
-                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
                   );
                     
     IF v_count = 0 THEN
@@ -111,126 +107,119 @@ v_sql := q'[
             SELECT DISTINCT
                    sk.skill_code AS skill_code,
                    sk.name AS skill_name,
-                   AS prerequisite_knowledge_score,
-                   AS learning_difficulty_score,
-                   AS implementation_difficulty_score,
-                   AS cross_platform_applicability_score,
+                   sk.prerequisite_knowledge AS prerequisite_knowledge_score,
+                   sk.learning_difficulty AS learning_difficulty_score,
+                   sk.implementation_difficulty AS implementation_difficulty_score,
+                   sk.cross_platform_applicability AS cross_platform_applicability_score,
                    sk.rating AS skill_rating,
-
-
                    vers.version_code AS version_code,
                    vers.name AS version_name,
-                   AS version_release_date,
-                   AS version_end_of_life,
-                   AS version_age,
-                   AS developer_popularity_score,
-                   AS community_support_score,
-                   AS industry_usage_score,
-                   AS knowledge_score,
-                   AS version_skill_rating,
+                   vers.release_date AS version_release_date,
+                   vers.end_of_life AS version_end_of_life,
+                   vers.developer_popularity AS developer_popularity_score,
+                   vers.community_support AS community_support_score,
+                   vers.industry_usage_score AS industry_usage_score,
+                   vers.knowledge_score AS knowledge_score,
+                   vers.skills_rating AS version_skill_rating,
                    vers.rating AS version_rating,
-
-
                    tech.technology_code AS technology_code,
                    tech.name AS technology_name,
                    tech.rating AS technology_rating,
-
-
                    tech_tp.technology_type_code AS technology_type_code,
                    tech_tp.name AS technology_type_name,
-                   tech_tp.rating AS technology_type_rating,
-                   
-                 
-
-                  
-
+                   tech_tp.rating AS technology_type_rating
             FROM autonomous_dw_landing_owner.dwh_user_skill us
             JOIN autonomous_dw_landing_owner.dwh_skill sk ON us.skill_code = sk.skill_code
             JOIN autonomous_dw_landing_owner.dwh_version vers  ON sk.last_version_code = vers.version_code
             JOIN autonomous_dw_landing_owner.dwh_technology tech ON vers.technology_code = tech.technology_code
-            JOIN autonomous_dw_landing_owner.dwh_technology_type tech_tp ON tech.technology_type_code = tech_tp.technology_type_code;
-            
-
-          ) s
+            JOIN autonomous_dw_landing_owner.dwh_technology_type tech_tp ON tech.technology_type_code = tech_tp.technology_type_code
+  
+           ) s
     ON (d.skill_code = s.skill_code)
     WHEN MATCHED THEN UPDATE SET
 
-        d.location_address          = s.location_address,
-        d.postal_code               = s.postal_code,
-        d.location_details          = s.location_details,
-        d.city_name                 = s.city_name,
-        d.capital_city_flag         = s.capital_city_flag,
-        d.city_latitude             = s.city_latitude,
-        d.city_longitude            = s.city_longitude,
-        d.city_population           = s.city_population,
-        d.city_area                 = s.city_area,
-        d.administrative_unit_name  = s.administrative_unit_name,
-        d.admin_unit_no_cities      = s.admin_unit_no_cities,
-        d.admin_unit_population     = s.admin_unit_population, 
-        d.admin_unit_area           = s.admin_unit_area,
-        d.country_name              = s.country_name,
-        d.country_population        = s.country_population,
-        d.country_area              = s.country_area,
-        d.country_rating            = s.country_rating,
-        d.official_language_name    = s.official_language_name,
-        d.currency_name             = s.currency_name,
-        d.region_name               = s.region_name,
-        d.deleted_flag              = 'N',
-        d.last_update_date          = CURRENT_TIMESTAMP
+       d.skill_name                             = s.skill_name,
+       d.prerequisite_knowledge_score           = s.prerequisite_knowledge_score,
+       d.learning_difficulty_score              = s.learning_difficulty_score,
+       d.implementation_difficulty_score        = s.implementation_difficulty_score,
+       d.cross_platform_applicability_score     = s.cross_platform_applicability_score,
+       d.skill_rating                           = s.skill_rating,
+       d.version_code                           = s.version_code,
+       d.version_name                           = s.version_name,
+       d.version_release_date                   = s.version_release_date,
+       d.version_end_of_life                    = s.version_end_of_life,
+       d.developer_popularity_score             = s.developer_popularity_score,
+       d.community_support_score                = s.community_support_score,
+       d.industry_usage_score                   = s.industry_usage_score,
+       d.knowledge_score                        = s.knowledge_score,
+       d.version_skill_rating                   = s.version_skill_rating,
+       d.version_rating                         = s.version_rating,
+       d.technology_code                        = s.technology_code,
+       d.technology_name                        = s.technology_name,
+       d.technology_rating                      = s.technology_rating,
+       d.technology_type_code                   = s.technology_type_code,
+       d.technology_type_name                   = s.technology_type_name,
+       d.technology_type_rating                 = s.technology_type_rating,
+       d.deleted_flag                           = 'N',
+       d.last_update_date                       = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
-        location_address_code,
-        location_address,
-        postal_code,
-        location_details,
-        city_name,
-        capital_city_flag,
-        city_latitude,
-        city_longitude,
-        city_population,
-        city_area,
-        administrative_unit_name,
-        admin_unit_no_cities,
-        admin_unit_population, 
-        admin_unit_area,
-        country_name,
-        country_population,
-        country_area,
-        country_rating,
-        official_language_name,
-        currency_name,
-        region_name,
-        deleted_flag,
-        creation_date,
-        last_update_date
-    )
-    VALUES 
-    (
-        s.location_address_code,
-        s.location_address,
-        s.postal_code,
-        s.location_details,
-        s.city_name,
-        s.capital_city_flag,
-        s.city_latitude,
-        s.city_longitude,
-        s.city_population,
-        s.city_area,
-        s.administrative_unit_name,
-        s.admin_unit_no_cities,
-        s.admin_unit_population, 
-        s.admin_unit_area,
-        s.country_name,
-        s.country_population,
-        s.country_area,
-        s.country_rating,
-        s.official_language_name,
-        s.currency_name,
-        s.region_name,
-        'N',
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    );
+
+      skill_code,
+      skill_name,
+      prerequisite_knowledge_score,
+      learning_difficulty_score,
+      implementation_difficulty_score,
+      cross_platform_applicability_score,
+      skill_rating,
+      version_code,
+      version_name,
+      version_release_date,
+      version_end_of_life,
+      developer_popularity_score,
+      community_support_score,
+      industry_usage_score,
+      knowledge_score,
+      version_skill_rating,
+      version_rating,
+      technology_code,
+      technology_name,
+      technology_rating,
+      technology_type_code,
+      technology_type_name,
+      technology_type_rating,
+      deleted_flag,
+      creation_date,
+      last_update_date
+)
+VALUES (
+      s.skill_code,
+      s.skill_name,
+      s.prerequisite_knowledge_score,
+      s.learning_difficulty_score,
+      s.implementation_difficulty_score,
+      s.cross_platform_applicability_score,
+      s.skill_rating,
+      s.version_code,
+      s.version_name,
+      s.version_release_date,
+      s.version_end_of_life,
+      s.developer_popularity_score,
+      s.community_support_score,
+      s.industry_usage_score,
+      s.knowledge_score,
+      s.version_skill_rating,
+      s.version_rating,
+      s.technology_code,
+      s.technology_name,
+      s.technology_rating,
+      s.technology_type_code,
+      s.technology_type_name,
+      s.technology_type_rating,
+      'N',
+      CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP
+);
     COMMIT;
 
 ---------------------------------------------------------------------- 
@@ -385,140 +374,136 @@ v_sql := q'[
     MERGE INTO autonomous_dw_owner.dwh_user_skill_dim d
     USING (
             SELECT DISTINCT
-                  loc.location_id AS location_address_code,
-                  loc.street_name || ' ' || loc.street_number AS location_address,
-                  loc.postal_code,
-                  TRIM(
-                       NVL(loc.building,'') || ' ' ||
-                       NVL(loc.staircase,'') || ' ' ||
-                       NVL(loc.floor,'') || ' ' ||
-                       NVL(loc.appartment_number,'')
-                      ) AS location_details,
-                 c.name AS city_name,
-                 CASE WHEN c.is_capital='Y' THEN 'Y' ELSE 'N' END AS capital_city_flag,
-                 c.latitude AS city_latitude,
-                 c.longitude AS city_longitude,
-                 c.population AS city_population, 
-                 c.area AS city_area,
-                 aut.name || ' ' || au.name AS administrative_unit_name,
-                 au.no_cities AS admin_unit_no_cities,
-                 au.population AS admin_unit_population,
-                 au.area  AS admin_unit_area,
-                 co.name AS country_name,
-                 co.population AS country_population,
-                 co.area AS country_area,
-                 co.rating AS country_rating,
-                 lang.name AS official_language_name,
-                 cur.name AS currency_name,
-                 reg.name AS region_name
-            FROM autonomous_dw_landing_owner.dwh_user_spec us
-            JOIN autonomous_dw_landing_owner.dwh_specialization sp ON us.specialization_id = sp.specialization_id
-            JOIN autonomous_dw_landing_owner.dwh_institution inst  ON sp.institution_id = inst.institution_id
-            JOIN autonomous_dw_landing_owner.dwh_location loc ON inst.location_id = loc.location_id
-            JOIN autonomous_dw_landing_owner.dwh_city c ON loc.city_code = c.city_code
-            JOIN autonomous_dw_landing_owner.dwh_administrative_unit au ON c.administrative_unit_id = au.administrative_unit_id
-            JOIN autonomous_dw_landing_owner.dwh_administrative_unit_type aut ON au.administrative_unit_type_id = aut.administrative_unit_type_id
-            JOIN autonomous_dw_landing_owner.dwh_country co ON au.country_id = co.country_id
-            JOIN autonomous_dw_landing_owner.dwh_region reg ON co.region_id = reg.region_id
-       LEFT JOIN autonomous_dw_landing_owner.dwh_language lang ON co.official_lang_code = lang.lang_code
-       LEFT JOIN autonomous_dw_landing_owner.dwh_currency cur ON co.currency_code = cur.currency_code
-       WHERE trunc(us.last_update_date) = trunc(sysdate-1)
-
-          ) s
-    ON (d.location_address_code = s.location_address_code)
+                   sk.skill_code AS skill_code,
+                   sk.name AS skill_name,
+                   sk.prerequisite_knowledge AS prerequisite_knowledge_score,
+                   sk.learning_difficulty AS learning_difficulty_score,
+                   sk.implementation_difficulty AS implementation_difficulty_score,
+                   sk.cross_platform_applicability AS cross_platform_applicability_score,
+                   sk.rating AS skill_rating,
+                   vers.version_code AS version_code,
+                   vers.name AS version_name,
+                   vers.release_date AS version_release_date,
+                   vers.end_of_life AS version_end_of_life,
+                   vers.developer_popularity AS developer_popularity_score,
+                   vers.community_support AS community_support_score,
+                   vers.industry_usage_score AS industry_usage_score,
+                   vers.knowledge_score AS knowledge_score,
+                   vers.skills_rating AS version_skill_rating,
+                   vers.rating AS version_rating,
+                   tech.technology_code AS technology_code,
+                   tech.name AS technology_name,
+                   tech.rating AS technology_rating,
+                   tech_tp.technology_type_code AS technology_type_code,
+                   tech_tp.name AS technology_type_name,
+                   tech_tp.rating AS technology_type_rating
+            FROM autonomous_dw_landing_owner.dwh_user_skill us
+            JOIN autonomous_dw_landing_owner.dwh_skill sk ON us.skill_code = sk.skill_code
+            JOIN autonomous_dw_landing_owner.dwh_version vers  ON sk.last_version_code = vers.version_code
+            JOIN autonomous_dw_landing_owner.dwh_technology tech ON vers.technology_code = tech.technology_code
+            JOIN autonomous_dw_landing_owner.dwh_technology_type tech_tp ON tech.technology_type_code = tech_tp.technology_type_code
+            WHERE trunc(us.last_update_date)=trunc(sysdate-1)
+  
+           ) s
+    ON (d.skill_code = s.skill_code)
     WHEN MATCHED THEN UPDATE SET
 
-        d.location_address          = s.location_address,
-        d.postal_code               = s.postal_code,
-        d.location_details          = s.location_details,
-        d.city_name                 = s.city_name,
-        d.capital_city_flag         = s.capital_city_flag,
-        d.city_latitude             = s.city_latitude,
-        d.city_longitude            = s.city_longitude,
-        d.city_population           = s.city_population,
-        d.city_area                 = s.city_area,
-        d.administrative_unit_name  = s.administrative_unit_name,
-        d.admin_unit_no_cities      = s.admin_unit_no_cities,
-        d.admin_unit_population     = s.admin_unit_population, 
-        d.admin_unit_area           = s.admin_unit_area,
-        d.country_name              = s.country_name,
-        d.country_population        = s.country_population,
-        d.country_area              = s.country_area,
-        d.country_rating            = s.country_rating,
-        d.official_language_name    = s.official_language_name,
-        d.currency_name             = s.currency_name,
-        d.region_name               = s.region_name,
-        d.deleted_flag              = 'N',
-        d.last_update_date          = CURRENT_TIMESTAMP
+       d.skill_name                             = s.skill_name,
+       d.prerequisite_knowledge_score           = s.prerequisite_knowledge_score,
+       d.learning_difficulty_score              = s.learning_difficulty_score,
+       d.implementation_difficulty_score        = s.implementation_difficulty_score,
+       d.cross_platform_applicability_score     = s.cross_platform_applicability_score,
+       d.skill_rating                           = s.skill_rating,
+       d.version_code                           = s.version_code,
+       d.version_name                           = s.version_name,
+       d.version_release_date                   = s.version_release_date,
+       d.version_end_of_life                    = s.version_end_of_life,
+       d.developer_popularity_score             = s.developer_popularity_score,
+       d.community_support_score                = s.community_support_score,
+       d.industry_usage_score                   = s.industry_usage_score,
+       d.knowledge_score                        = s.knowledge_score,
+       d.version_skill_rating                   = s.version_skill_rating,
+       d.version_rating                         = s.version_rating,
+       d.technology_code                        = s.technology_code,
+       d.technology_name                        = s.technology_name,
+       d.technology_rating                      = s.technology_rating,
+       d.technology_type_code                   = s.technology_type_code,
+       d.technology_type_name                   = s.technology_type_name,
+       d.technology_type_rating                 = s.technology_type_rating,
+       d.deleted_flag                           = 'N',
+       d.last_update_date                       = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
-        location_address_code,
-        location_address,
-        postal_code,
-        location_details,
-        city_name,
-        capital_city_flag,
-        city_latitude,
-        city_longitude,
-        city_population,
-        city_area,
-        administrative_unit_name,
-        admin_unit_no_cities,
-        admin_unit_population, 
-        admin_unit_area,
-        country_name,
-        country_population,
-        country_area,
-        country_rating,
-        official_language_name,
-        currency_name,
-        region_name,
-        deleted_flag,
-        creation_date,
-        last_update_date
+
+       skill_code,                    
+       skill_name,  
+       prerequisite_knowledge_score,     
+       learning_difficulty_score,     
+       implementation_difficulty_score,      
+       cross_platform_applicability_score,   
+       skill_rating,    
+       version_code,   
+       version_name,  
+       version_release_date,      
+       version_end_of_life,                    
+       developer_popularity_score,            
+       community_support_score,               
+       industry_usage_score,                  
+       knowledge_score,                      
+       version_skill_rating,                 
+       version_rating,                        
+       technology_code,                       
+       technology_name,                      
+       technology_rating,                     
+       technology_type_code,                  
+       technology_type_name,                  
+       technology_type_rating,                
+       deleted_flag,
+       creation_date,
+       last_update_date
     )
     VALUES 
     (
-        s.location_address_code,
-        s.location_address,
-        s.postal_code,
-        s.location_details,
-        s.city_name,
-        s.capital_city_flag,
-        s.city_latitude,
-        s.city_longitude,
-        s.city_population,
-        s.city_area,
-        s.administrative_unit_name,
-        s.admin_unit_no_cities,
-        s.admin_unit_population, 
-        s.admin_unit_area,
-        s.country_name,
-        s.country_population,
-        s.country_area,
-        s.country_rating,
-        s.official_language_name,
-        s.currency_name,
-        s.region_name,
-        'N',
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
+       s.skill_code,                    
+       s.skill_name,  
+       s.prerequisite_knowledge_score,     
+       s.learning_difficulty_score,     
+       s.implementation_difficulty_score,      
+       s.cross_platform_applicability_score,   
+       s.skill_rating,    
+       s.version_code,   
+       s.version_name,  
+       s.version_release_date,      
+       s.version_end_of_life,                    
+       s.developer_popularity_score,            
+       s.community_support_score,               
+       s.industry_usage_score,                  
+       s.knowledge_score,                      
+       s.version_skill_rating,                 
+       s.version_rating,                        
+       s.technology_code,                       
+       s.technology_name,                      
+       s.technology_rating,                     
+       s.technology_type_code,                  
+       s.technology_type_name,                  
+       s.technology_type_rating,     
+       'N',
+       CURRENT_TIMESTAMP,
+       CURRENT_TIMESTAMP
     );
-
+    
     UPDATE autonomous_dw_owner.dwh_user_skill_dim d
     SET
            d.deleted_flag = 'Y',
            d.last_update_date = CURRENT_TIMESTAMP
     WHERE NOT EXISTS (
                        SELECT 1
-                       FROM autonomous_dw_landing_owner.dwh_user_spec us
-                           JOIN autonomous_dw_landing_owner.dwh_specialization sp 
-                                ON us.specialization_id = sp.specialization_id
-                           JOIN autonomous_dw_landing_owner.dwh_institution inst 
-                                ON sp.institution_id = inst.institution_id
-                           JOIN autonomous_dw_landing_owner.dwh_location loc 
-                                ON inst.location_id = loc.location_id
-                       WHERE loc.location_id = d.location_address_code
+                       FROM autonomous_dw_landing_owner.dwh_user_skill us
+                           JOIN autonomous_dw_landing_owner.dwh_skill s ON us.skill_code = s.skill_code
+                           JOIN autonomous_dw_landing_owner.dwh_version vers ON s.last_version_code = vers.version_code
+                           JOIN autonomous_dw_landing_owner.dwh_technology tech ON vers.technology_code = tech.technology_code
+                           JOIN autonomous_dw_landing_owner.dwh_technology_type tech_tp ON tech.technology_type_code = tech_tp.technology_type_code
+                       WHERE s.skill_code = d.skill_code
                      )
     AND d.deleted_flag = 'N';
 
@@ -569,10 +554,17 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[5.] The PRC_ETL_USER_SKILL_DAILY procedure was created.');
 
-DBMS_SCHEDULER.DROP_JOB (
-job_name => 'JOB_ETL_USER_SKILL_DAILY_PROCESS',
-force    => TRUE
-);
+SELECT COUNT(*) INTO v_count
+FROM dba_scheduler_jobs
+WHERE owner = 'ADMIN'
+AND job_name = 'JOB_ETL_USER_SKILL_DAILY_PROCESS';
+
+IF v_count > 0 THEN
+    DBMS_SCHEDULER.DROP_JOB (
+        job_name => 'JOB_ETL_USER_SKILL_DAILY_PROCESS',
+        force    => TRUE
+    );
+END IF;
 
 DBMS_SCHEDULER.CREATE_JOB (
 
