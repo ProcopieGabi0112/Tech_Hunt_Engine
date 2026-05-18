@@ -92,25 +92,18 @@ v_sql := q'[
 
     MERGE INTO autonomous_dw_owner.dwh_certification_dim d
     USING (
-       SELECT DISTINCT  
-          s.certification_id AS certification_id,
-          inst.institution_id AS institution_id,
-          s.certification_type_id AS certification_type_id,
-          s.name AS certification_name,
-          s.degree_type AS degree_type,
-          s.employment_rate AS employment_rate, 
-          s.teachers_feedback AS teachers_feedback, 
-          s.courses_feedback AS courses_feedback, 
-          s.entry_difficulty AS entry_difficulty,
-          s.graduation_difficulty AS graduation_difficulty, 
-          s.industry_reputation AS industry_reputation,
-          s.rating AS certification_rating,
-          st.name AS certification_type_name, 
-          st.complexity_score AS certification_type_score,
-          inst.name AS institution_name, 
-          inst.founding_year AS founding_year, 
-          inst.rating AS institution_rating, 
-          dw_inst_loc.institution_location_key AS institution_location_key
+       SELECT DISTINCT 
+          ll.lang_level_id AS lang_level_id,
+          ll.lang_code AS lang_code,
+          ll.name AS certification_name,
+          ll.nivel AS certification_level,
+          ll.validity_period AS certification_validity,
+          ll.rating AS certification_rating,
+          l.name AS language_name,
+          l.no_speakers AS no_speakers,
+          l.no_countries AS no_countries,
+          l.no_companies AS no_companies,
+          l.rating AS language_rating
         FROM autonomous_dw_landing_owner.dwh_user_level ul
         JOIN autonomous_dw_landing_owner.dwh_lang_level ll
              ON ul.lang_level_id = ll.lang_level_id
@@ -122,70 +115,48 @@ v_sql := q'[
 
     WHEN MATCHED THEN UPDATE SET
 
-         
-          d.institution_id                 = s.institution_id,
-          d.certification_type_id         = s.certification_type_id,
-          d.certification_name            = s.certification_name,
-          d.degree_type                    = s.degree_type,
-          d.employment_rate                = s.employment_rate, 
-          d.teachers_feedback              = s.teachers_feedback, 
-          d.courses_feedback               = s.courses_feedback, 
-          d.entry_difficulty               = s.entry_difficulty,
-          d.graduation_difficulty          = s.graduation_difficulty, 
-          d.industry_reputation            = s.industry_reputation,
-          d.certification_rating          = s.certification_rating,
-          d.certification_type_name       = s.certification_type_name, 
-          d.certification_type_score      = s.certification_type_score,
-          d.institution_name               = s.institution_name, 
-          d.founding_year                  = s.founding_year, 
-          d.institution_rating             = s.institution_rating, 
-          d.institution_location_key       = s.institution_location_key,
+          d.lang_code                      = s.lang_code,
+          d.certification_name             = s.certification_name,
+          d.certification_level            = s.certification_level,
+          d.certification_validity         = s.certification_validity,
+          d.certification_rating           = s.certification_rating,
+          d.language_name                  = s.language_name,
+          d.no_speakers                    = s.no_speakers,
+          d.no_countries                   = s.no_countries,
+          d.no_companies                   = s.no_companies,
+          d.language_rating                = s.language_rating,
           d.deleted_flag                   = 'N',
           d.last_update_date               = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
 
-          certification_id,
-          institution_id,
-          certification_type_id,
+          lang_level_id,
+          lang_code,
           certification_name,
-          degree_type,
-          employment_rate, 
-          teachers_feedback, 
-          courses_feedback, 
-          entry_difficulty,
-          graduation_difficulty, 
-          industry_reputation,
+          certification_level,
+          certification_validity,
           certification_rating,
-          certification_type_name, 
-          certification_type_score,
-          institution_name, 
-          founding_year, 
-          institution_rating, 
-          institution_location_key,
+          language_name,
+          no_speakers,
+          no_countries,
+          no_companies,
+          language_rating,
           deleted_flag,
           creation_date,
           last_update_date
 )
 VALUES (
-      s.certification_id,
-      s.institution_id,
-      s.certification_type_id,
+      s.lang_level_id,
+      s.lang_code,
       s.certification_name,
-      s.degree_type,
-      s.employment_rate, 
-      s.teachers_feedback, 
-      s.courses_feedback, 
-      s.entry_difficulty,
-      s.graduation_difficulty, 
-      s.industry_reputation,
+      s.certification_level,
+      s.certification_validity,
       s.certification_rating,
-      s.certification_type_name, 
-      s.certification_type_score,
-      s.institution_name, 
-      s.founding_year, 
-      s.institution_rating, 
-      s.institution_location_key,
+      s.language_name,
+      s.no_speakers,
+      s.no_countries,
+      s.no_companies,
+      s.language_rating,
       'N',
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
@@ -284,26 +255,16 @@ v_sql := q'[
     -- [2.] VALIDATE SOURCE TABLES SYNC
     ------------------------------------
  
-        SELECT COUNT(*) INTO v_count
+
+    SELECT COUNT(*) INTO v_count
     FROM dual
-    WHERE EXISTS ( SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_certification 
+      WHERE EXISTS ( SELECT 1 
+                   FROM autonomous_dw_landing_owner.dwh_lang_level 
                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
                   ) AND EXISTS (
                    SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_institution 
+                   FROM autonomous_dw_landing_owner.dwh_language
                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_certification_type
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_tech_owner.dwh_processes_notif
-                   WHERE process_name = 'ETL_INSTITUTION_LOCATION_DAILY_PROCESS' 
-                   AND TO_DATE(process_date, 'YYYY-MM-DD') = TRUNC(SYSDATE)
-                   AND process_type = 'DAILY'
-                   AND status = 'DONE'
                   );
                     
     IF v_count = 0 THEN
@@ -320,112 +281,79 @@ v_sql := q'[
     -- [4.] MERGE DIM TABLE
     -------------------------
 
-    
     MERGE INTO autonomous_dw_owner.dwh_certification_dim d
     USING (
-       SELECT DISTINCT  
-          s.certification_id AS certification_id,
-          inst.institution_id AS institution_id,
-          s.certification_type_id AS certification_type_id,
-          s.name AS certification_name,
-          s.degree_type AS degree_type,
-          s.employment_rate AS employment_rate, 
-          s.teachers_feedback AS teachers_feedback, 
-          s.courses_feedback AS courses_feedback, 
-          s.entry_difficulty AS entry_difficulty,
-          s.graduation_difficulty AS graduation_difficulty, 
-          s.industry_reputation AS industry_reputation,
-          s.rating AS certification_rating,
-          st.name AS certification_type_name, 
-          st.complexity_score AS certification_type_score,
-          inst.name AS institution_name, 
-          inst.founding_year AS founding_year, 
-          inst.rating AS institution_rating, 
-          dw_inst_loc.institution_location_key AS institution_location_key
-        FROM autonomous_dw_landing_owner.dwh_user_spec us
-        JOIN autonomous_dw_landing_owner.dwh_certification s
-             ON us.certification_id = s.certification_id
-        JOIN autonomous_dw_landing_owner.dwh_certification_type st
-             ON s.certification_type_id = st.certification_type_id
-        JOIN autonomous_dw_landing_owner.dwh_institution inst
-             ON s.institution_id = inst.institution_id
-        JOIN autonomous_dw_owner.dwh_institution_location_dim dw_inst_loc
-             ON inst.location_id = dw_inst_loc.location_address_code
-        WHERE TRUNC(us.last_update_date) = TRUNC(SYSDATE-1)
+       SELECT DISTINCT 
+          ll.lang_level_id AS lang_level_id,
+          ll.lang_code AS lang_code,
+          ll.name AS certification_name,
+          ll.nivel AS certification_level,
+          ll.validity_period AS certification_validity,
+          ll.rating AS certification_rating,
+          l.name AS language_name,
+          l.no_speakers AS no_speakers,
+          l.no_countries AS no_countries,
+          l.no_companies AS no_companies,
+          l.rating AS language_rating
+        FROM autonomous_dw_landing_owner.dwh_user_level ul
+        JOIN autonomous_dw_landing_owner.dwh_lang_level ll
+             ON ul.lang_level_id = ll.lang_level_id
+        JOIN autonomous_dw_landing_owner.dwh_language l
+             ON ll.lang_code = l.lang_code
+        WHERE trunc(ul.last_update_date) = trunc(sysdate-1)
        
                ) s
-    ON (d.certification_id = s.certification_id)
+    ON (d.lang_level_id = s.lang_level_id)
 
     WHEN MATCHED THEN UPDATE SET
 
-          
-          d.institution_id                 = s.institution_id,
-          d.certification_type_id         = s.certification_type_id,
-          d.certification_name            = s.certification_name,
-          d.degree_type                    = s.degree_type,
-          d.employment_rate                = s.employment_rate, 
-          d.teachers_feedback              = s.teachers_feedback, 
-          d.courses_feedback               = s.courses_feedback, 
-          d.entry_difficulty               = s.entry_difficulty,
-          d.graduation_difficulty          = s.graduation_difficulty, 
-          d.industry_reputation            = s.industry_reputation,
-          d.certification_rating          = s.certification_rating,
-          d.certification_type_name       = s.certification_type_name, 
-          d.certification_type_score      = s.certification_type_score,
-          d.institution_name               = s.institution_name, 
-          d.founding_year                  = s.founding_year, 
-          d.institution_rating             = s.institution_rating, 
-          d.institution_location_key       = s.institution_location_key,
+          d.lang_code                      = s.lang_code,
+          d.certification_name             = s.certification_name,
+          d.certification_level            = s.certification_level,
+          d.certification_validity         = s.certification_validity,
+          d.certification_rating           = s.certification_rating,
+          d.language_name                  = s.language_name,
+          d.no_speakers                    = s.no_speakers,
+          d.no_countries                   = s.no_countries,
+          d.no_companies                   = s.no_companies,
+          d.language_rating                = s.language_rating,
           d.deleted_flag                   = 'N',
           d.last_update_date               = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
 
-          certification_id,
-          institution_id,
-          certification_type_id,
+          lang_level_id,
+          lang_code,
           certification_name,
-          degree_type,
-          employment_rate, 
-          teachers_feedback, 
-          courses_feedback, 
-          entry_difficulty,
-          graduation_difficulty, 
-          industry_reputation,
+          certification_level,
+          certification_validity,
           certification_rating,
-          certification_type_name, 
-          certification_type_score,
-          institution_name, 
-          founding_year, 
-          institution_rating, 
-          institution_location_key,
+          language_name,
+          no_speakers,
+          no_countries,
+          no_companies,
+          language_rating,
           deleted_flag,
           creation_date,
           last_update_date
 )
 VALUES (
-      s.certification_id,
-      s.institution_id,
-      s.certification_type_id,
+      s.lang_level_id,
+      s.lang_code,
       s.certification_name,
-      s.degree_type,
-      s.employment_rate, 
-      s.teachers_feedback, 
-      s.courses_feedback, 
-      s.entry_difficulty,
-      s.graduation_difficulty, 
-      s.industry_reputation,
+      s.certification_level,
+      s.certification_validity,
       s.certification_rating,
-      s.certification_type_name, 
-      s.certification_type_score,
-      s.institution_name, 
-      s.founding_year, 
-      s.institution_rating, 
-      s.institution_location_key,
+      s.language_name,
+      s.no_speakers,
+      s.no_countries,
+      s.no_companies,
+      s.language_rating,
       'N',
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
 );
+
     
     
     UPDATE autonomous_dw_owner.dwh_certification_dim d
@@ -434,9 +362,9 @@ VALUES (
            d.last_update_date = CURRENT_TIMESTAMP
     WHERE NOT EXISTS (
                        SELECT 1
-                       FROM autonomous_dw_landing_owner.dwh_user_spec us
-                       JOIN autonomous_dw_landing_owner.dwh_certification s ON us.certification_id = s.certification_id
-                       WHERE s.certification_id = d.certification_id
+                       FROM autonomous_dw_landing_owner.dwh_user_level ul
+                       JOIN autonomous_dw_landing_owner.dwh_lang_level ll ON ul.lang_level_id = ll.lang_level_id
+                       WHERE ll.lang_level_id = d.lang_level_id
                      )
     AND d.deleted_flag = 'N';
 
@@ -509,7 +437,7 @@ DBMS_SCHEDULER.CREATE_JOB (
 
         start_date      => SYSTIMESTAMP,
 
-        repeat_interval => 'FREQ=DAILY;BYHOUR=2;BYMINUTE=0;BYSECOND=0',
+        repeat_interval => 'FREQ=DAILY;BYHOUR=1;BYMINUTE=0;BYSECOND=0',
 
         enabled         => TRUE,
 
