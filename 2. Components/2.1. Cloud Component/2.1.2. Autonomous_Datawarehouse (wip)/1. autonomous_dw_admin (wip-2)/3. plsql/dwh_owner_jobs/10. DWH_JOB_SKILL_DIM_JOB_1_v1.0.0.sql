@@ -1,5 +1,5 @@
---AUTONOMOUS_DW_OWNER_DWH_USER_SKILL_DIM_JOB_1_v1.0.0
---"DWH_USER_SKILL_DIM JOB"
+--AUTONOMOUS_DW_OWNER_DWH_JOB_SKILL_DIM_JOB_1_v1.0.0
+--"DWH_JOB_SKILL_DIM JOB"
 SET SERVEROUTPUT ON;
 DECLARE
   v_count NUMBER;
@@ -8,7 +8,7 @@ DECLARE
 BEGIN
 DBMS_OUTPUT.PUT_LINE('[1.] Script running...');
 
---[1.] CHECK CURRENT USER AND SCHEMA
+--[1.] CHECK CURRENT JOB AND SCHEMA
 SELECT COUNT(*) INTO v_count
 FROM dual
 WHERE sys_context('USERENV', 'SESSION_USER') = 'ADMIN'
@@ -28,13 +28,13 @@ SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_USER_SKILL_INITIAL_LOAD';
+AND object_name ='PRC_ETL_JOB_SKILL_INITIAL_LOAD';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_user_skill_initial_load;';
+    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_job_skill_initial_load;';
 END IF;
 -- CREATE PROCEDURE FOR INITIAL LOAD
 v_sql := q'[
-             CREATE OR REPLACE PROCEDURE prc_etl_user_skill_initial_load
+             CREATE OR REPLACE PROCEDURE prc_etl_job_skill_initial_load
              AS
                 v_count             NUMBER;
                 v_notification_id   VARCHAR2(200);
@@ -52,7 +52,7 @@ v_sql := q'[
         admin_user
     )
     VALUES (
-        'ETL_USER_SKILL_INITIAL_LOAD_PROCESS',
+        'ETL_JOB_SKILL_INITIAL_LOAD_PROCESS',
         TO_CHAR(SYSDATE,'YYYY-MM-DD'),
         'INITIAL LOAD',
         CURRENT_TIMESTAMP,
@@ -102,7 +102,7 @@ v_sql := q'[
     -- [4.] MERGE DIM TABLE
     -------------------------
 
-    MERGE INTO autonomous_dw_owner.dwh_user_skill_dim d
+    MERGE INTO autonomous_dw_owner.dwh_job_skill_dim d
     USING (
             SELECT DISTINCT
                    sk.skill_code AS skill_code,
@@ -128,8 +128,8 @@ v_sql := q'[
                    tech_tp.technology_type_code AS technology_type_code,
                    tech_tp.name AS technology_type_name,
                    tech_tp.rating AS technology_type_rating
-            FROM autonomous_dw_landing_owner.dwh_user_skill us
-            JOIN autonomous_dw_landing_owner.dwh_skill sk ON us.skill_code = sk.skill_code
+            FROM autonomous_dw_landing_owner.dwh_job_skill js
+            JOIN autonomous_dw_landing_owner.dwh_skill sk ON js.skill_code = sk.skill_code
             JOIN autonomous_dw_landing_owner.dwh_version vers  ON sk.last_version_code = vers.version_code
             JOIN autonomous_dw_landing_owner.dwh_technology tech ON vers.technology_code = tech.technology_code
             JOIN autonomous_dw_landing_owner.dwh_technology_type tech_tp ON tech.technology_type_code = tech_tp.technology_type_code
@@ -260,30 +260,30 @@ SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_USER_SKILL_INITIAL_LOAD';
+AND object_name ='PRC_ETL_JOB_SKILL_INITIAL_LOAD';
 
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_USER_SKILL_INITIAL_LOAD procedure wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_JOB_SKILL_INITIAL_LOAD procedure wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[3.] The PRC_ETL_USER_SKILL_INITIAL_LOAD procedure was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The PRC_ETL_JOB_SKILL_INITIAL_LOAD procedure was created.');
 
-EXECUTE IMMEDIATE 'BEGIN admin.prc_etl_user_skill_initial_load; END;';
+EXECUTE IMMEDIATE 'BEGIN admin.prc_etl_job_skill_initial_load; END;';
 
-DBMS_OUTPUT.PUT_LINE('[4.] The PRC_ETL_USER_SKILL_INITIAL_LOAD is running.');
+DBMS_OUTPUT.PUT_LINE('[4.] The PRC_ETL_JOB_SKILL_INITIAL_LOAD is running.');
 
 -- CREATE DAILY PROCEDURE IF EXIST
 SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_USER_SKILL_DAILY';
+AND object_name ='PRC_ETL_JOB_SKILL_DAILY';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_user_skill_daily;';
+    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_job_skill_daily;';
 END IF;
 
 -- CREATE PROCEDURE 
 v_sql := q'[
-              CREATE OR REPLACE PROCEDURE prc_etl_user_skill_daily
+              CREATE OR REPLACE PROCEDURE prc_etl_job_skill_daily
              AS
                 v_count             NUMBER;
                 v_notification_id   VARCHAR2(200);
@@ -301,7 +301,7 @@ v_sql := q'[
         admin_user
     )
     VALUES (
-        'ETL_USER_SKILL_DAILY_PROCESS',
+        'ETL_JOB_SKILL_DAILY_PROCESS',
         TO_CHAR(SYSDATE,'YYYY-MM-DD'),
         'DAILY',
         CURRENT_TIMESTAMP,
@@ -314,7 +314,7 @@ v_sql := q'[
     -- [2.] VALIDATE SOURCE TABLES SYNC
     ------------------------------------
  
-     SELECT COUNT(*) INTO v_count
+      SELECT COUNT(*) INTO v_count
     FROM dual
     WHERE EXISTS ( SELECT 1 
                    FROM autonomous_dw_landing_owner.dwh_skill 
@@ -351,7 +351,7 @@ v_sql := q'[
     -- [4.] MERGE DIM TABLE
     -------------------------
 
-    MERGE INTO autonomous_dw_owner.dwh_user_skill_dim d
+    MERGE INTO autonomous_dw_owner.dwh_job_skill_dim d
     USING (
             SELECT DISTINCT
                    sk.skill_code AS skill_code,
@@ -377,12 +377,12 @@ v_sql := q'[
                    tech_tp.technology_type_code AS technology_type_code,
                    tech_tp.name AS technology_type_name,
                    tech_tp.rating AS technology_type_rating
-            FROM autonomous_dw_landing_owner.dwh_user_skill us
-            JOIN autonomous_dw_landing_owner.dwh_skill sk ON us.skill_code = sk.skill_code
+            FROM autonomous_dw_landing_owner.dwh_job_skill js
+            JOIN autonomous_dw_landing_owner.dwh_skill sk ON js.skill_code = sk.skill_code
             JOIN autonomous_dw_landing_owner.dwh_version vers  ON sk.last_version_code = vers.version_code
             JOIN autonomous_dw_landing_owner.dwh_technology tech ON vers.technology_code = tech.technology_code
             JOIN autonomous_dw_landing_owner.dwh_technology_type tech_tp ON tech.technology_type_code = tech_tp.technology_type_code
-            WHERE trunc(us.last_update_date)=trunc(sysdate-1)
+            WHERE trunc(js.last_update_date)=trunc(sysdate-1)
   
            ) s
     ON (d.skill_code = s.skill_code)
@@ -472,14 +472,14 @@ v_sql := q'[
        CURRENT_TIMESTAMP
     );
     
-    UPDATE autonomous_dw_owner.dwh_user_skill_dim d
+    UPDATE autonomous_dw_owner.dwh_job_skill_dim d
     SET
            d.deleted_flag = 'Y',
            d.last_update_date = CURRENT_TIMESTAMP
     WHERE NOT EXISTS (
                        SELECT 1
-                       FROM autonomous_dw_landing_owner.dwh_user_skill us
-                           JOIN autonomous_dw_landing_owner.dwh_skill s ON us.skill_code = s.skill_code
+                       FROM autonomous_dw_landing_owner.dwh_job_skill js
+                           JOIN autonomous_dw_landing_owner.dwh_skill s ON js.skill_code = s.skill_code
                            JOIN autonomous_dw_landing_owner.dwh_version vers ON s.last_version_code = vers.version_code
                            JOIN autonomous_dw_landing_owner.dwh_technology tech ON vers.technology_code = tech.technology_code
                            JOIN autonomous_dw_landing_owner.dwh_technology_type tech_tp ON tech.technology_type_code = tech_tp.technology_type_code
@@ -527,32 +527,32 @@ SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_USER_SKILL_DAILY';
+AND object_name ='PRC_ETL_JOB_SKILL_DAILY';
 
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_USER_SKILL_DAILY procedure wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_JOB_SKILL_DAILY procedure wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[5.] The PRC_ETL_USER_SKILL_DAILY procedure was created.');
+DBMS_OUTPUT.PUT_LINE('[5.] The PRC_ETL_JOB_SKILL_DAILY procedure was created.');
 
 SELECT COUNT(*) INTO v_count
 FROM dba_scheduler_jobs
 WHERE owner = 'ADMIN'
-AND job_name = 'JOB_ETL_USER_SKILL_DAILY_PROCESS';
+AND job_name = 'JOB_ETL_JOB_SKILL_DAILY_PROCESS';
 
 IF v_count > 0 THEN
     DBMS_SCHEDULER.DROP_JOB (
-        job_name => 'JOB_ETL_USER_SKILL_DAILY_PROCESS',
+        job_name => 'JOB_ETL_JOB_SKILL_DAILY_PROCESS',
         force    => TRUE
     );
 END IF;
 
 DBMS_SCHEDULER.CREATE_JOB (
 
-        job_name        => 'JOB_ETL_USER_SKILL_DAILY_PROCESS',
+        job_name        => 'JOB_ETL_JOB_SKILL_DAILY_PROCESS',
 
         job_type        => 'STORED_PROCEDURE',
 
-        job_action      => 'ADMIN.PRC_ETL_USER_SKILL_DAILY',
+        job_action      => 'ADMIN.PRC_ETL_JOB_SKILL_DAILY',
 
         start_date      => SYSTIMESTAMP,
 
@@ -562,12 +562,12 @@ DBMS_SCHEDULER.CREATE_JOB (
 
         auto_drop       => FALSE,
 
-        comments        => 'Daily ETL process for DWH_USER_SKILL_DIM'
+        comments        => 'Daily ETL process for DWH_JOB_SKILL_DIM'
 
     );
 
     
-DBMS_OUTPUT.PUT_LINE('[6.] The PRC_ETL_USER_SKILL_DAILY scheduled job was created.');
+DBMS_OUTPUT.PUT_LINE('[6.] The PRC_ETL_JOB_SKILL_DAILY scheduled job was created.');
 
 DBMS_OUTPUT.PUT_LINE('[7.] The script running is done!');
 EXCEPTION
