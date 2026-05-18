@@ -137,7 +137,7 @@ v_sql := q'[
 
     WHEN MATCHED THEN UPDATE SET
 
-          d.specialization_id              = s.specialization_id,
+         
           d.institution_id                 = s.institution_id,
           d.specialization_type_id         = s.specialization_type_id,
           d.specialization_name            = s.specialization_name,
@@ -373,7 +373,7 @@ v_sql := q'[
 
     WHEN MATCHED THEN UPDATE SET
 
-          d.specialization_id              = s.specialization_id,
+          
           d.institution_id                 = s.institution_id,
           d.specialization_type_id         = s.specialization_type_id,
           d.specialization_name            = s.specialization_name,
