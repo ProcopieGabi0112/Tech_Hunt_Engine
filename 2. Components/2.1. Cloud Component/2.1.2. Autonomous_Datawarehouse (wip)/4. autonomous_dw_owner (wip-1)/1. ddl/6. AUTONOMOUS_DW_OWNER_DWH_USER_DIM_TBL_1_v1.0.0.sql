@@ -48,6 +48,7 @@ v_sql := q'[
           gender VARCHAR2(1) NOT NULL,
           creation_account_date DATE NOT NULL,
           account_age_days NUMBER(10,0) NOT NULL,
+          update_account_date DATE NOT NULL,
           days_since_last_update NUMBER(10,0) NOT NULL,
           is_recently_active VARCHAR2(1) NOT NULL,
           is_new_user VARCHAR2(1) NOT NULL,
@@ -96,6 +97,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.phone IS '
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.gender IS ''Gender of the user (M/F).''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.creation_account_date IS ''The date when the user account was created in the source system.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.account_age_days IS ''Derived feature: number of days since account creation.''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.update_account_date IS ''The date when the user account was updated in the source system.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.days_since_last_update IS ''Derived feature: number of days since last account update.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.is_recently_active IS ''Derived feature: Y/N flag indicating if user was active in the last 30 days.''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_dw_owner.dwh_user_dim.is_new_user IS ''Derived feature: Y/N flag indicating if user account is newer than 7 days.''';
@@ -276,12 +278,12 @@ BEGIN
 --------------------------------------------------------------------
 -- DAYS SINCE LAST UPDATE
 --------------------------------------------------------------------
-IF :NEW.last_update_date IS NOT NULL THEN
+IF :NEW.update_account_date IS NOT NULL THEN
 
     :NEW.days_since_last_update :=
         TRUNC(
             CURRENT_DATE
-            - CAST(:NEW.last_update_date AS DATE)
+            - CAST(:NEW.update_account_date AS DATE)
         );
 
 ELSE
@@ -293,10 +295,10 @@ END IF;
 --------------------------------------------------------------------
 -- IS RECENTLY ACTIVE
 --------------------------------------------------------------------
-IF :NEW.last_update_date IS NOT NULL
+IF :NEW.update_account_date IS NOT NULL
    AND (
         CURRENT_DATE
-        - CAST(:NEW.last_update_date AS DATE)
+        - CAST(:NEW.update_account_date AS DATE)
        ) <= 30 THEN
 
     :NEW.is_recently_active := 'Y';
