@@ -1,5 +1,5 @@
---AUTONOMOUS_DW_OWNER_DWH_SPECIALIZATION_DIM_JOB_1_v1.0.0
---"DWH_SPECIALIZATION_DIM JOB"
+--AUTONOMOUS_DW_OWNER_DWH_COMPANY_DIM_JOB_1_v1.0.0
+--"DWH_COMPANY_DIM JOB"
 SET SERVEROUTPUT ON;
 DECLARE
   v_count NUMBER;
@@ -28,13 +28,13 @@ SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_SPECIALIZATION_INITIAL_LOAD';
+AND object_name ='PRC_ETL_COMPANY_INITIAL_LOAD';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_specialization_initial_load;';
+    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_company_initial_load;';
 END IF;
 -- CREATE PROCEDURE FOR INITIAL LOAD
 v_sql := q'[
-             CREATE OR REPLACE PROCEDURE prc_etl_specialization_initial_load
+             CREATE OR REPLACE PROCEDURE prc_etl_company_initial_load
              AS
                 v_count             NUMBER;
                 v_notification_id   VARCHAR2(200);
@@ -52,7 +52,7 @@ v_sql := q'[
         admin_user
     )
     VALUES (
-        'ETL_SPECIALIZATION_INITIAL_LOAD_PROCESS',
+        'ETL_COMPANY_INITIAL_LOAD_PROCESS',
         TO_CHAR(SYSDATE,'YYYY-MM-DD'),
         'INITIAL LOAD',
         CURRENT_TIMESTAMP,
@@ -68,20 +68,16 @@ v_sql := q'[
     SELECT COUNT(*) INTO v_count
     FROM dual
       WHERE EXISTS ( SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_specialization 
+                   FROM autonomous_dw_landing_owner.dwh_industry_type
                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
                   ) AND EXISTS (
                    SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_institution 
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_specialization_type
+                   FROM autonomous_dw_landing_owner.dwh_organization_type
                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
                   ) AND EXISTS (
                    SELECT 1 
                    FROM autonomous_dw_tech_owner.dwh_processes_notif
-                   WHERE process_name = 'ETL_INSTITUTION_LOCATION_INITIAL_LOAD_PROCESS' 
+                   WHERE process_name = 'ETL_COMPANY_LOCATION_INITIAL_LOAD_PROCESS' 
                    AND TO_DATE(process_date, 'YYYY-MM-DD') = TRUNC(SYSDATE)
                    AND process_type = 'INITIAL LOAD'
                    AND status = 'DONE'
@@ -101,175 +97,135 @@ v_sql := q'[
     -- [4.] MERGE DIM TABLE
     -------------------------
 
-    MERGE INTO autonomous_dw_owner.dwh_specialization_dim d
+    MERGE INTO autonomous_dw_owner.dwh_company_dim d
     USING (
-       SELECT
-    c.company_id,
-    c.legal_entity_identifier AS company_identifier,
-    c.name AS company_name,
-    c.website AS company_website,
-    c.foundation_date,
-    c.share_capital,
-    c.net_profit,
-    c.average_annual_revenue,
-    c.total_assets,
-    c.total_liabilities,
-    c.debt_to_equity_ratio,
-    c.no_employees,
-    c.rating AS company_rating,
 
-    -- LOOKUP
-    ot.company_type_id,
-    ot.name AS company_type_name,
-    it.industry_type_id,
-    it.name AS industry_type_name,
+       SELECT DISTINCT 
+              c.company_id AS company_id,
+              c.legal_entity_identifier AS company_identifier,
+              c.name AS company_name,
+              c.website AS company_website,
+              c.foundation_date AS foundation_date,
+              c.share_capital AS share_capital,
+              c.net_profit AS net_profit,
+              c.average_annual_revenue AS average_annual_revenue,
+              c.total_assets AS total_assets,
+              c.total_liabilities AS total_liabilities,
+              c.debt_to_equity_ratio AS debt_to_equity_ratio,
+              c.no_employees AS no_employees,
+              c.rating AS company_rating,
+              SUM(CASE WHEN d.no_open_positions > 0 THEN 1 ELSE 0 END) AS departments_with_open_positions,
+              SUM(NVL(d.no_open_positions,0)) AS total_open_positions,
+              AVG(d.rating) AS average_departments_rating,
+              AVG(d.turnover_rate) AS average_turnover_rate,
+              SUM(d.annual_budget) AS total_departments_budget,
+              SUM(d.expenses) AS total_departments_expenses,
+              ot.company_type_id AS company_type_id,
+              ot.name AS company_type_name,
+              it.industry_type_id AS industry_type_id,
+              it.name AS industry_type_name,
+              loc.company_location_key AS company_location_key
+       FROM autonomous_dw_landing_owner.dwh_company c
+            JOIN autonomous_dw_landing_owner.dwh_industry_type it ON c.industry_type_id = it.industry_type_id
+            JOIN autonomous_dw_landing_owner.dwh_organization_type ot ON c.company_type_id = ot.company_type_id
+            JOIN autonomous_dw_owner.dwh_company_location_dim loc ON c.company_location_id = loc.location_address_code
+            LEFT JOIN autonomous_dw_landing_owner.dwh_department d ON c.company_id = d.company_id
+       GROUP BY
+               c.company_id, c.legal_entity_identifier, c.name, c.website,
+               c.foundation_date, c.share_capital, c.net_profit,
+               c.average_annual_revenue, c.total_assets, c.total_liabilities,
+               c.debt_to_equity_ratio, c.no_employees, c.rating,
+               ot.company_type_id, ot.name,
+               it.industry_type_id, it.name,
+               loc.company_location_key      
+          ) s
 
-    -- LOCATION
-    loc.company_location_key,
-
-    -- DEPARTMENT AGGREGATES
-    COUNT(d.department_id) AS total_departments,
-    SUM(CASE WHEN d.no_open_positions > 0 THEN 1 ELSE 0 END)
-        AS departments_with_open_positions,
-    SUM(NVL(d.no_open_positions,0)) AS total_open_positions,
-    AVG(d.rating) AS avg_department_rating,
-    AVG(d.turnover_rate) AS avg_turnover_rate,
-    SUM(d.annual_budget) AS total_departments_budget,
-    SUM(d.expenses) AS total_departments_expenses,
-
-    -- ML FEATURES
-    (EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM c.foundation_date))
-        AS company_age_years,
-
-    CASE WHEN c.average_annual_revenue > 0
-         THEN ROUND(c.net_profit / c.average_annual_revenue, 4)
-         ELSE NULL END AS profit_margin,
-
-    CASE WHEN c.no_employees > 0
-         THEN ROUND(c.average_annual_revenue / c.no_employees, 4)
-         ELSE NULL END AS revenue_per_employee,
-
-    CASE WHEN c.total_assets > 0
-         THEN ROUND((c.net_profit + c.average_annual_revenue) / c.total_assets, 4)
-         ELSE NULL END AS financial_health_score,
-
-    CASE WHEN c.total_liabilities > 0
-         THEN ROUND(c.total_assets / c.total_liabilities, 4)
-         ELSE NULL END AS leverage_ratio,
-
-    ROUND(
-        (AVG(d.rating) * 0.4) +
-        ((1 - AVG(d.turnover_rate)/100) * 0.3) +
-        (SUM(d.no_open_positions) * 0.3),
-        4
-    ) AS org_health_score,
-
-    ROUND(
-        (1 - AVG(d.turnover_rate)/100),
-        4
-    ) AS org_stability_score,
-
-    -- TECHNICAL
-    c.creation_date,
-    c.created_by,
-    c.last_update_date,
-    c.last_updated_by,
-    CURRENT_TIMESTAMP AS valid_from,
-    TO_TIMESTAMP('9999-12-31 23:59:59','YYYY-MM-DD HH24:MI:SS') AS valid_to,
-    'db_env' AS source_system,
-    c.deleted_flag
-
-FROM autonomous_dw_landing_owner.dwh_company c
-JOIN autonomous_dw_landing_owner.dwh_industry_type it
-     ON c.industry_type_id = it.industry_type_id
-JOIN autonomous_dw_landing_owner.dwh_organization_type ot
-     ON c.company_type_id = ot.company_type_id
-JOIN autonomous_dw_owner.dwh_company_location_dim loc
-     ON c.company_location_id = loc.company_location_id
-LEFT JOIN autonomous_dw_landing_owner.dwh_department d
-     ON c.company_id = d.company_id
-WHERE c.deleted_flag = 'N'
-GROUP BY
-    c.company_id, c.legal_entity_identifier, c.name, c.website,
-    c.foundation_date, c.share_capital, c.net_profit,
-    c.average_annual_revenue, c.total_assets, c.total_liabilities,
-    c.debt_to_equity_ratio, c.no_employees, c.rating,
-    ot.company_type_id, ot.name,
-    it.industry_type_id, it.name,
-    loc.company_location_key,
-    c.creation_date, c.created_by, c.last_update_date, c.last_updated_by,
-    c.deleted_flag;
-
-       
-               ) s
-    ON (d.specialization_id = s.specialization_id)
+    ON (d.company_id = s.company_id)
 
     WHEN MATCHED THEN UPDATE SET
-
-         
-          d.institution_id                 = s.institution_id,
-          d.specialization_type_id         = s.specialization_type_id,
-          d.specialization_name            = s.specialization_name,
-          d.degree_type                    = s.degree_type,
-          d.employment_rate                = s.employment_rate, 
-          d.teachers_feedback              = s.teachers_feedback, 
-          d.courses_feedback               = s.courses_feedback, 
-          d.entry_difficulty               = s.entry_difficulty,
-          d.graduation_difficulty          = s.graduation_difficulty, 
-          d.industry_reputation            = s.industry_reputation,
-          d.specialization_rating          = s.specialization_rating,
-          d.specialization_type_name       = s.specialization_type_name, 
-          d.specialization_type_score      = s.specialization_type_score,
-          d.institution_name               = s.institution_name, 
-          d.founding_year                  = s.founding_year, 
-          d.institution_rating             = s.institution_rating, 
-          d.institution_location_key       = s.institution_location_key,
-          d.deleted_flag                   = 'N',
-          d.last_update_date               = CURRENT_TIMESTAMP
+          
+              d.company_identifier                   = s.company_identifier,                 
+              d.company_name                         = s.company_name,
+              d.company_website                      = s.company_website,
+              d.foundation_date                      = s.foundation_date,
+              d.share_capital                        = s.share_capital,
+              d.net_profit                           = s.net_profit,
+              d.average_annual_revenue               = s.average_annual_revenue,
+              d.total_assets                         = s.total_assets,
+              d.total_liabilities                    = s.total_liabilities,
+              d.debt_to_equity_ratio                 = s.debt_to_equity_ratio,
+              d.no_employees                         = s.no_employees,
+              d.company_rating                       = s.company_rating,
+              d.departments_with_open_positions      = s.departments_with_open_positions,
+              d.total_open_positions                 = s.total_open_positions,
+              d.average_departments_rating           = s.average_departments_rating,
+              d.average_turnover_rate                = s.average_turnover_rate,
+              d.total_departments_budget             = s.total_departments_budget,
+              d.total_departments_expenses           = s.total_departments_expenses,
+              d.company_type_id                      = s.company_type_id,
+              d.company_type_name                    = s.company_type_name,
+              d.industry_type_id                     = s.industry_type_id,
+              d.industry_type_name                   = s.industry_type_name,
+              d.company_location_key                 = s.company_location_key,
+              d.deleted_flag                         = 'N',
+              d.last_update_date                     = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
-
-          specialization_id,
-          institution_id,
-          specialization_type_id,
-          specialization_name,
-          degree_type,
-          employment_rate, 
-          teachers_feedback, 
-          courses_feedback, 
-          entry_difficulty,
-          graduation_difficulty, 
-          industry_reputation,
-          specialization_rating,
-          specialization_type_name, 
-          specialization_type_score,
-          institution_name, 
-          founding_year, 
-          institution_rating, 
-          institution_location_key,
+         
+          company_id,
+          company_identifier,
+          company_name,
+          company_website,
+          foundation_date,
+          share_capital,
+          net_profit,
+          average_annual_revenue,
+          total_assets,
+          total_liabilities,
+          debt_to_equity_ratio,
+          no_employees,
+          company_rating,
+          departments_with_open_positions,
+          total_open_positions,
+          average_departments_rating,
+          average_turnover_rate,
+          total_departments_budget,
+          total_departments_expenses,
+          company_type_id,
+          company_type_name,
+          industry_type_id,
+          industry_type_name,
+          company_location_key,
           deleted_flag,
           creation_date,
           last_update_date
 )
 VALUES (
-      s.specialization_id,
-      s.institution_id,
-      s.specialization_type_id,
-      s.specialization_name,
-      s.degree_type,
-      s.employment_rate, 
-      s.teachers_feedback, 
-      s.courses_feedback, 
-      s.entry_difficulty,
-      s.graduation_difficulty, 
-      s.industry_reputation,
-      s.specialization_rating,
-      s.specialization_type_name, 
-      s.specialization_type_score,
-      s.institution_name, 
-      s.founding_year, 
-      s.institution_rating, 
-      s.institution_location_key,
+     
+      s.company_id,
+      s.company_identifier,
+      s.company_name,
+      s.company_website,
+      s.foundation_date,
+      s.share_capital,
+      s.net_profit,
+      s.average_annual_revenue,
+      s.total_assets,
+      s.total_liabilities,
+      s.debt_to_equity_ratio,
+      s.no_employees,
+      s.company_rating,
+      s.departments_with_open_positions,
+      s.total_open_positions,
+      s.average_departments_rating,
+      s.average_turnover_rate,
+      s.total_departments_budget,
+      s.total_departments_expenses,
+      s.company_type_id,
+      s.company_type_name,
+      s.industry_type_id,
+      s.industry_type_name,
+      s.company_location_key,
       'N',
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
@@ -314,31 +270,31 @@ SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_SPECIALIZATION_INITIAL_LOAD';
+AND object_name ='PRC_ETL_COMPANY_INITIAL_LOAD';
 
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_SPECIALIZATION_INITIAL_LOAD procedure wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_COMPANY_INITIAL_LOAD procedure wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[3.] The PRC_ETL_SPECIALIZATION_INITIAL_LOAD procedure was created.');
+DBMS_OUTPUT.PUT_LINE('[3.] The PRC_ETL_COMPANY_INITIAL_LOAD procedure was created.');
 
-EXECUTE IMMEDIATE 'BEGIN admin.prc_etl_specialization_initial_load; END;';
+EXECUTE IMMEDIATE 'BEGIN admin.prc_etl_company_initial_load; END;';
 
-DBMS_OUTPUT.PUT_LINE('[4.] The PRC_ETL_SPECIALIZATION_INITIAL_LOAD is running.');
+DBMS_OUTPUT.PUT_LINE('[4.] The PRC_ETL_COMPANY_INITIAL_LOAD is running.');
 
 -- CREATE DAILY PROCEDURE IF EXIST
 SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_SPECIALIZATION_DAILY';
+AND object_name ='PRC_ETL_COMPANY_DAILY';
 IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_specialization_daily;';
+    EXECUTE IMMEDIATE 'DROP PROCEDURE prc_etl_company_daily;';
 END IF;
 
 -- CREATE PROCEDURE 
 v_sql := q'[
-              CREATE OR REPLACE PROCEDURE prc_etl_specialization_daily
-             AS
+              CREATE OR REPLACE PROCEDURE prc_etl_company_daily
+                          AS
                 v_count             NUMBER;
                 v_notification_id   VARCHAR2(200);
                 v_error             VARCHAR2(4000);
@@ -355,9 +311,9 @@ v_sql := q'[
         admin_user
     )
     VALUES (
-        'ETL_SPECIALIZATION_DAILY_PROCESS',
+        'ETL_COMPANY_DAILY_PROCESS',
         TO_CHAR(SYSDATE,'YYYY-MM-DD'),
-        'DAILY',
+        'INITIAL LOAD',
         CURRENT_TIMESTAMP,
         'IN_PROGRESS',
         'AUTONOMOUS_DW_ADMIN'
@@ -368,23 +324,19 @@ v_sql := q'[
     -- [2.] VALIDATE SOURCE TABLES SYNC
     ------------------------------------
  
-        SELECT COUNT(*) INTO v_count
+    SELECT COUNT(*) INTO v_count
     FROM dual
-    WHERE EXISTS ( SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_specialization 
+      WHERE EXISTS ( SELECT 1 
+                   FROM autonomous_dw_landing_owner.dwh_industry_type
                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
                   ) AND EXISTS (
                    SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_institution 
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_specialization_type
+                   FROM autonomous_dw_landing_owner.dwh_organization_type
                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
                   ) AND EXISTS (
                    SELECT 1 
                    FROM autonomous_dw_tech_owner.dwh_processes_notif
-                   WHERE process_name = 'ETL_INSTITUTION_LOCATION_DAILY_PROCESS' 
+                   WHERE process_name = 'ETL_COMPANY_LOCATION_DAILY_PROCESS' 
                    AND TO_DATE(process_date, 'YYYY-MM-DD') = TRUNC(SYSDATE)
                    AND process_type = 'DAILY'
                    AND status = 'DONE'
@@ -404,123 +356,153 @@ v_sql := q'[
     -- [4.] MERGE DIM TABLE
     -------------------------
 
-    
-    MERGE INTO autonomous_dw_owner.dwh_specialization_dim d
+    MERGE INTO autonomous_dw_owner.dwh_company_dim d
     USING (
-       SELECT DISTINCT  
-          s.specialization_id AS specialization_id,
-          inst.institution_id AS institution_id,
-          s.specialization_type_id AS specialization_type_id,
-          s.name AS specialization_name,
-          s.degree_type AS degree_type,
-          s.employment_rate AS employment_rate, 
-          s.teachers_feedback AS teachers_feedback, 
-          s.courses_feedback AS courses_feedback, 
-          s.entry_difficulty AS entry_difficulty,
-          s.graduation_difficulty AS graduation_difficulty, 
-          s.industry_reputation AS industry_reputation,
-          s.rating AS specialization_rating,
-          st.name AS specialization_type_name, 
-          st.complexity_score AS specialization_type_score,
-          inst.name AS institution_name, 
-          inst.founding_year AS founding_year, 
-          inst.rating AS institution_rating, 
-          dw_inst_loc.institution_location_key AS institution_location_key
-        FROM autonomous_dw_landing_owner.dwh_user_spec us
-        JOIN autonomous_dw_landing_owner.dwh_specialization s
-             ON us.specialization_id = s.specialization_id
-        JOIN autonomous_dw_landing_owner.dwh_specialization_type st
-             ON s.specialization_type_id = st.specialization_type_id
-        JOIN autonomous_dw_landing_owner.dwh_institution inst
-             ON s.institution_id = inst.institution_id
-        JOIN autonomous_dw_owner.dwh_institution_location_dim dw_inst_loc
-             ON inst.location_id = dw_inst_loc.location_address_code
-        WHERE TRUNC(us.last_update_date) = TRUNC(SYSDATE-1)
-       
-               ) s
-    ON (d.specialization_id = s.specialization_id)
+
+       SELECT DISTINCT 
+              c.company_id AS company_id,
+              c.legal_entity_identifier AS company_identifier,
+              c.name AS company_name,
+              c.website AS company_website,
+              c.foundation_date AS foundation_date,
+              c.share_capital AS share_capital,
+              c.net_profit AS net_profit,
+              c.average_annual_revenue AS average_annual_revenue,
+              c.total_assets AS total_assets,
+              c.total_liabilities AS total_liabilities,
+              c.debt_to_equity_ratio AS debt_to_equity_ratio,
+              c.no_employees AS no_employees,
+              c.rating AS company_rating,
+              SUM(CASE WHEN d.no_open_positions > 0 THEN 1 ELSE 0 END) AS departments_with_open_positions,
+              SUM(NVL(d.no_open_positions,0)) AS total_open_positions,
+              AVG(d.rating) AS average_departments_rating,
+              AVG(d.turnover_rate) AS average_turnover_rate,
+              SUM(d.annual_budget) AS total_departments_budget,
+              SUM(d.expenses) AS total_departments_expenses,
+              ot.company_type_id AS company_type_id,
+              ot.name AS company_type_name,
+              it.industry_type_id AS industry_type_id,
+              it.name AS industry_type_name,
+              loc.company_location_key AS company_location_key
+       FROM autonomous_dw_landing_owner.dwh_company c
+            JOIN autonomous_dw_landing_owner.dwh_industry_type it ON c.industry_type_id = it.industry_type_id
+            JOIN autonomous_dw_landing_owner.dwh_organization_type ot ON c.company_type_id = ot.company_type_id
+            JOIN autonomous_dw_owner.dwh_company_location_dim loc ON c.company_location_id = loc.location_address_code
+            LEFT JOIN autonomous_dw_landing_owner.dwh_department d ON c.company_id = d.company_id
+       WHERE trunc(c.last_update_date) = trunc(sysdate - 1)
+       GROUP BY
+               c.company_id, c.legal_entity_identifier, c.name, c.website,
+               c.foundation_date, c.share_capital, c.net_profit,
+               c.average_annual_revenue, c.total_assets, c.total_liabilities,
+               c.debt_to_equity_ratio, c.no_employees, c.rating,
+               ot.company_type_id, ot.name,
+               it.industry_type_id, it.name,
+               loc.company_location_key      
+          ) s
+
+    ON (d.company_id = s.company_id)
 
     WHEN MATCHED THEN UPDATE SET
-
           
-          d.institution_id                 = s.institution_id,
-          d.specialization_type_id         = s.specialization_type_id,
-          d.specialization_name            = s.specialization_name,
-          d.degree_type                    = s.degree_type,
-          d.employment_rate                = s.employment_rate, 
-          d.teachers_feedback              = s.teachers_feedback, 
-          d.courses_feedback               = s.courses_feedback, 
-          d.entry_difficulty               = s.entry_difficulty,
-          d.graduation_difficulty          = s.graduation_difficulty, 
-          d.industry_reputation            = s.industry_reputation,
-          d.specialization_rating          = s.specialization_rating,
-          d.specialization_type_name       = s.specialization_type_name, 
-          d.specialization_type_score      = s.specialization_type_score,
-          d.institution_name               = s.institution_name, 
-          d.founding_year                  = s.founding_year, 
-          d.institution_rating             = s.institution_rating, 
-          d.institution_location_key       = s.institution_location_key,
-          d.deleted_flag                   = 'N',
-          d.last_update_date               = CURRENT_TIMESTAMP
+              d.company_identifier                   = s.company_identifier,                 
+              d.company_name                         = s.company_name,
+              d.company_website                      = s.company_website,
+              d.foundation_date                      = s.foundation_date,
+              d.share_capital                        = s.share_capital,
+              d.net_profit                           = s.net_profit,
+              d.average_annual_revenue               = s.average_annual_revenue,
+              d.total_assets                         = s.total_assets,
+              d.total_liabilities                    = s.total_liabilities,
+              d.debt_to_equity_ratio                 = s.debt_to_equity_ratio,
+              d.no_employees                         = s.no_employees,
+              d.company_rating                       = s.company_rating,
+              d.departments_with_open_positions      = s.departments_with_open_positions,
+              d.total_open_positions                 = s.total_open_positions,
+              d.average_departments_rating           = s.average_departments_rating,
+              d.average_turnover_rate                = s.average_turnover_rate,
+              d.total_departments_budget             = s.total_departments_budget,
+              d.total_departments_expenses           = s.total_departments_expenses,
+              d.company_type_id                      = s.company_type_id,
+              d.company_type_name                    = s.company_type_name,
+              d.industry_type_id                     = s.industry_type_id,
+              d.industry_type_name                   = s.industry_type_name,
+              d.company_location_key                 = s.company_location_key,
+              d.deleted_flag                         = 'N',
+              d.last_update_date                     = CURRENT_TIMESTAMP
                  
     WHEN NOT MATCHED THEN INSERT (
-
-          specialization_id,
-          institution_id,
-          specialization_type_id,
-          specialization_name,
-          degree_type,
-          employment_rate, 
-          teachers_feedback, 
-          courses_feedback, 
-          entry_difficulty,
-          graduation_difficulty, 
-          industry_reputation,
-          specialization_rating,
-          specialization_type_name, 
-          specialization_type_score,
-          institution_name, 
-          founding_year, 
-          institution_rating, 
-          institution_location_key,
+         
+          company_id,
+          company_identifier,
+          company_name,
+          company_website,
+          foundation_date,
+          share_capital,
+          net_profit,
+          average_annual_revenue,
+          total_assets,
+          total_liabilities,
+          debt_to_equity_ratio,
+          no_employees,
+          company_rating,
+          departments_with_open_positions,
+          total_open_positions,
+          average_departments_rating,
+          average_turnover_rate,
+          total_departments_budget,
+          total_departments_expenses,
+          company_type_id,
+          company_type_name,
+          industry_type_id,
+          industry_type_name,
+          company_location_key,
           deleted_flag,
           creation_date,
           last_update_date
 )
 VALUES (
-      s.specialization_id,
-      s.institution_id,
-      s.specialization_type_id,
-      s.specialization_name,
-      s.degree_type,
-      s.employment_rate, 
-      s.teachers_feedback, 
-      s.courses_feedback, 
-      s.entry_difficulty,
-      s.graduation_difficulty, 
-      s.industry_reputation,
-      s.specialization_rating,
-      s.specialization_type_name, 
-      s.specialization_type_score,
-      s.institution_name, 
-      s.founding_year, 
-      s.institution_rating, 
-      s.institution_location_key,
+     
+      s.company_id,
+      s.company_identifier,
+      s.company_name,
+      s.company_website,
+      s.foundation_date,
+      s.share_capital,
+      s.net_profit,
+      s.average_annual_revenue,
+      s.total_assets,
+      s.total_liabilities,
+      s.debt_to_equity_ratio,
+      s.no_employees,
+      s.company_rating,
+      s.departments_with_open_positions,
+      s.total_open_positions,
+      s.average_departments_rating,
+      s.average_turnover_rate,
+      s.total_departments_budget,
+      s.total_departments_expenses,
+      s.company_type_id,
+      s.company_type_name,
+      s.industry_type_id,
+      s.industry_type_name,
+      s.company_location_key,
       'N',
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
+
 );
-    
-    
-    UPDATE autonomous_dw_owner.dwh_specialization_dim d
+    UPDATE autonomous_dw_owner.dwh_company_dim d
     SET
            d.deleted_flag = 'Y',
            d.last_update_date = CURRENT_TIMESTAMP
     WHERE NOT EXISTS (
                        SELECT 1
-                       FROM autonomous_dw_landing_owner.dwh_user_spec us
-                       JOIN autonomous_dw_landing_owner.dwh_specialization s ON us.specialization_id = s.specialization_id
-                       WHERE s.specialization_id = d.specialization_id
+                       FROM autonomous_dw_landing_owner.dwh_company c
+                            JOIN autonomous_dw_landing_owner.dwh_industry_type it ON c.industry_type_id = it.industry_type_id
+                            JOIN autonomous_dw_landing_owner.dwh_organization_type ot ON c.company_type_id = ot.company_type_id
+                            JOIN autonomous_dw_owner.dwh_company_location_dim loc ON c.company_location_id = loc.location_address_code
+                            LEFT JOIN autonomous_dw_landing_owner.dwh_department d ON c.company_id = d.company_id
+                       WHERE c.company_id = d.company_id
                      )
     AND d.deleted_flag = 'N';
 
@@ -564,32 +546,32 @@ SELECT COUNT(*) INTO v_count
 FROM dba_objects
 WHERE owner = 'ADMIN'
 AND object_type = 'PROCEDURE'
-AND object_name ='PRC_ETL_SPECIALIZATION_DAILY';
+AND object_name ='PRC_ETL_COMPANY_DAILY';
 
 IF v_count = 0 THEN
-    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_SPECIALIZATION_DAILY procedure wasnt created properly.');
+    RAISE_APPLICATION_ERROR(-20001,'The PRC_ETL_COMPANY_DAILY procedure wasnt created properly.');
 END IF;
-DBMS_OUTPUT.PUT_LINE('[5.] The PRC_ETL_SPECIALIZATION_DAILY procedure was created.');
+DBMS_OUTPUT.PUT_LINE('[5.] The PRC_ETL_COMPANY_DAILY procedure was created.');
 
 SELECT COUNT(*) INTO v_count
 FROM dba_scheduler_jobs
 WHERE owner = 'ADMIN'
-AND job_name = 'JOB_ETL_SPECIALIZATION_DAILY_PROCESS';
+AND job_name = 'JOB_ETL_COMPANY_DAILY_PROCESS';
 
 IF v_count > 0 THEN
     DBMS_SCHEDULER.DROP_JOB (
-        job_name => 'JOB_ETL_SPECIALIZATION_DAILY_PROCESS',
+        job_name => 'JOB_ETL_COMPANY_DAILY_PROCESS',
         force    => TRUE
     );
 END IF;
 
 DBMS_SCHEDULER.CREATE_JOB (
 
-        job_name        => 'JOB_ETL_SPECIALIZATION_DAILY_PROCESS',
+        job_name        => 'JOB_ETL_COMPANY_DAILY_PROCESS',
 
         job_type        => 'STORED_PROCEDURE',
 
-        job_action      => 'ADMIN.PRC_ETL_SPECIALIZATION_DAILY',
+        job_action      => 'ADMIN.PRC_ETL_COMPANY_DAILY',
 
         start_date      => SYSTIMESTAMP,
 
@@ -599,12 +581,12 @@ DBMS_SCHEDULER.CREATE_JOB (
 
         auto_drop       => FALSE,
 
-        comments        => 'Daily ETL process for DWH_SPECIALIZATION_DIM'
+        comments        => 'Daily ETL process for DWH_COMPANY_DIM'
 
     );
 
     
-DBMS_OUTPUT.PUT_LINE('[6.] The PRC_ETL_SPECIALIZATION_DAILY scheduled job was created.');
+DBMS_OUTPUT.PUT_LINE('[6.] The PRC_ETL_COMPANY_DAILY scheduled job was created.');
 
 DBMS_OUTPUT.PUT_LINE('[7.] The script running is done!');
 EXCEPTION

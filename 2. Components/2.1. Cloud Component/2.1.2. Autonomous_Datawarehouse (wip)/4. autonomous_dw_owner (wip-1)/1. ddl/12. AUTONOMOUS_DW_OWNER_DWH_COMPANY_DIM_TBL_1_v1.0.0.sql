@@ -41,6 +41,7 @@ v_sql := q'[
           --business columns
           company_key NUMBER(38,0) PRIMARY KEY,
           company_id NUMBER(38,0) NOT NULL,
+          company_identifier VARCHAR2(200) NOT NULL,
           company_name VARCHAR2(255) NOT NULL,
           company_website VARCHAR2(4000) NOT NULL,
           foundation_date DATE NOT NULL,
@@ -104,7 +105,10 @@ v_sql := q'[
           valid_from            TIMESTAMP NOT NULL,
           valid_to              TIMESTAMP NOT NULL,
           source_system         VARCHAR2(20) NOT NULL CHECK (source_system IN ('db_env')),
-          deleted_flag          VARCHAR2(1) NOT NULL CHECK (deleted_flag IN ('N','Y'))
+          deleted_flag          VARCHAR2(1) NOT NULL CHECK (deleted_flag IN ('N','Y')),
+          CONSTRAINT fk_company_dim_location
+          FOREIGN KEY (company_location_key)
+          REFERENCES autonomous_dw_owner.dwh_company_location_dim (company_location_key)
         )
     ]';
  
