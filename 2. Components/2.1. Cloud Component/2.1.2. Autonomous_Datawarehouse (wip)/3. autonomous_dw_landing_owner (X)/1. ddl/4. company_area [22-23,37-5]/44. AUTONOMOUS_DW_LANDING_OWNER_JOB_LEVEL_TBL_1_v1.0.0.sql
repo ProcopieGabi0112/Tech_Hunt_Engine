@@ -37,7 +37,7 @@ v_sql := q'[
         CREATE TABLE autonomous_dw_landing_owner.dwh_job_level (
 
           --business columns
-          dwh_job_level_id NUMBER(10,0),
+          job_level_id NUMBER(10,0),
           name VARCHAR2(50) NOT NULL, 
           complexity_score NUMBER(5,2) NOT NULL,
           code VARCHAR2(50) NOT NULL, 
