@@ -34,15 +34,14 @@ IF v_count > 0 THEN
 END IF;
 -- CREATE PROCEDURE FOR INITIAL LOAD
 v_sql := q'[
-             CREATE OR REPLACE PROCEDURE prc_etl_date_initial_load
-             AS
-                v_count             NUMBER;
-                v_notification_id   VARCHAR2(200);
-                v_error             VARCHAR2(4000);
-             BEGIN
-    ------------------------------------------ 
-    -- [1.] INSERT NOTIFICATION (IN_PROGRESS)
-    ------------------------------------------
+   CREATE OR REPLACE PROCEDURE prc_etl_date_initial_load
+AS
+    v_notification_id   VARCHAR2(200);
+    v_error             VARCHAR2(4000);
+BEGIN
+    ----------------------------------------------------
+    -- [1] NOTIFICATION
+    ----------------------------------------------------
     INSERT INTO autonomous_dw_tech_owner.dwh_processes_notif (
         process_name,
         process_date,
@@ -52,123 +51,95 @@ v_sql := q'[
         admin_user
     )
     VALUES (
-        'ETL_DATE_INITIAL_LOAD_PROCESS',
+        'ETL_DATE_DAILY_PROCESS',
         TO_CHAR(SYSDATE,'YYYY-MM-DD'),
-        'INITIAL LOAD',
+        'DAILY',
         CURRENT_TIMESTAMP,
         'IN_PROGRESS',
         'AUTONOMOUS_DW_ADMIN'
     )
-     RETURNING notification_id INTO v_notification_id;
-     COMMIT;
-    ------------------------------------ 
-    -- [2.] VALIDATE SOURCE TABLES SYNC
-    ------------------------------------
- 
-    ------------------------- 
-    -- [4.] MERGE DIM TABLE
-    -------------------------
+    RETURNING notification_id INTO v_notification_id;
 
-    MERGE INTO autonomous_dw_owner.dwh_date_dim d
-    USING (
-            SELECT DISTINCT
-                  coloanele din tabela actuala 
-            FROM autonomous_dw_landing_owner.dwh_job j
-            JOIN autonomous_dw_landing_owner.dwh_location loc ON j.location_id = loc.location_id
-            JOIN autonomous_dw_landing_owner.dwh_city c ON loc.city_code = c.city_code
-            JOIN autonomous_dw_landing_owner.dwh_administrative_unit au ON c.administrative_unit_id = au.administrative_unit_id
-            JOIN autonomous_dw_landing_owner.dwh_administrative_unit_type aut ON au.administrative_unit_type_id = aut.administrative_unit_type_id
-            JOIN autonomous_dw_landing_owner.dwh_country co ON au.country_id = co.country_id
-            JOIN autonomous_dw_landing_owner.dwh_region reg ON co.region_id = reg.region_id
-       LEFT JOIN autonomous_dw_landing_owner.dwh_language lang ON co.official_lang_code = lang.lang_code
-       LEFT JOIN autonomous_dw_landing_owner.dwh_currency cur ON co.currency_code = cur.currency_code
-
-          ) s
-    ON (d.location_address_code = s.location_address_code)
-    WHEN MATCHED THEN UPDATE SET
-
-        d.location_address          = s.location_address,
-        d.postal_code               = s.postal_code,
-        d.location_details          = s.location_details,
-        d.city_name                 = s.city_name,
-        d.capital_city_flag         = s.capital_city_flag,
-        d.city_latitude             = s.city_latitude,
-        d.city_longitude            = s.city_longitude,
-        d.city_population           = s.city_population,
-        d.city_area                 = s.city_area,
-        d.administrative_unit_name  = s.administrative_unit_name,
-        d.admin_unit_no_cities      = s.admin_unit_no_cities,
-        d.admin_unit_population     = s.admin_unit_population, 
-        d.admin_unit_area           = s.admin_unit_area,
-        d.country_name              = s.country_name,
-        d.country_population        = s.country_population,
-        d.country_area              = s.country_area,
-        d.country_rating            = s.country_rating,
-        d.official_language_name    = s.official_language_name,
-        d.currency_name             = s.currency_name,
-        d.region_name               = s.region_name,
-        d.deleted_flag              = 'N',
-        d.last_update_date          = CURRENT_TIMESTAMP
-                 
-    WHEN NOT MATCHED THEN INSERT (
-        location_address_code,
-        location_address,
-        postal_code,
-        location_details,
-        city_name,
-        capital_city_flag,
-        city_latitude,
-        city_longitude,
-        city_population,
-        city_area,
-        administrative_unit_name,
-        admin_unit_no_cities,
-        admin_unit_population, 
-        admin_unit_area,
-        country_name,
-        country_population,
-        country_area,
-        country_rating,
-        official_language_name,
-        currency_name,
-        region_name,
-        deleted_flag,
-        creation_date,
-        last_update_date
-    )
-    VALUES 
-    (
-        s.location_address_code,
-        s.location_address,
-        s.postal_code,
-        s.location_details,
-        s.city_name,
-        s.capital_city_flag,
-        s.city_latitude,
-        s.city_longitude,
-        s.city_population,
-        s.city_area,
-        s.administrative_unit_name,
-        s.admin_unit_no_cities,
-        s.admin_unit_population, 
-        s.admin_unit_area,
-        s.country_name,
-        s.country_population,
-        s.country_area,
-        s.country_rating,
-        s.official_language_name,
-        s.currency_name,
-        s.region_name,
-        'N',
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    );
     COMMIT;
 
----------------------------------------------------------------------- 
--- [5.] SUCCESS NOTIFICATION
-----------------------------------------------------------------------
+    ----------------------------------------------------
+    -- [2] INSERT ONLY NEW DATES
+    ----------------------------------------------------
+    INSERT INTO autonomous_dw_owner.dwh_date_dim (
+        date_key,
+        full_date,
+        day_of_month,
+        day_of_week,
+        day_name,
+        week_of_year,
+        month_number,
+        month_name,
+        quarter,
+        year,
+        weekend_flag,
+        creation_date,
+        created_by,
+        last_update_date,
+        last_updated_by,
+        valid_from,
+        valid_to,
+        source_system,
+        deleted_flag
+    )
+    SELECT
+        TO_NUMBER(TO_CHAR(x.d,'YYYYMMDD')) AS date_key,
+        x.d AS full_date,
+        EXTRACT(DAY FROM x.d) AS day_of_month,
+        TO_NUMBER(TO_CHAR(x.d,'D')) AS day_of_week,
+        TRIM(TO_CHAR(x.d,'DAY')) AS day_name,
+        TO_NUMBER(TO_CHAR(x.d,'WW')) AS week_of_year,
+        EXTRACT(MONTH FROM x.d) AS month_number,
+        TRIM(TO_CHAR(x.d,'MONTH')) AS month_name,
+        TO_NUMBER(TO_CHAR(x.d,'Q')) AS quarter,
+        EXTRACT(YEAR FROM x.d) AS year,
+        CASE
+            WHEN TO_CHAR(x.d,'D') IN ('1','7') THEN 'Y'
+            ELSE 'N'
+        END AS weekend_flag,
+        CURRENT_TIMESTAMP,
+        'ETL_DATE_PROCESS',
+        CURRENT_TIMESTAMP,
+        'ETL_DATE_PROCESS',
+        CURRENT_TIMESTAMP,
+        TO_TIMESTAMP(
+            '9999-12-31 23:59:59',
+            'YYYY-MM-DD HH24:MI:SS'
+        ),
+        'db_env',
+        'N'
+    FROM (
+        SELECT DISTINCT apply_date AS d
+        FROM autonomous_dw_landing_owner.dwh_job_application
+        WHERE apply_date IS NOT NULL
 
+        UNION
+
+        SELECT DISTINCT creation_date AS d
+        FROM autonomous_dw_landing_owner.dwh_job_application
+        WHERE creation_date IS NOT NULL
+
+        UNION
+
+        SELECT DISTINCT last_update_date AS d
+        FROM autonomous_dw_landing_owner.dwh_job_application
+        WHERE last_update_date IS NOT NULL
+    ) x
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM autonomous_dw_owner.dwh_date_dim dd
+        WHERE dd.date_key = TO_NUMBER(TO_CHAR(x.d,'YYYYMMDD'))
+    );
+
+    COMMIT;
+
+    ----------------------------------------------------
+    -- [3] SUCCESS
+    ----------------------------------------------------
     UPDATE autonomous_dw_tech_owner.dwh_processes_notif
     SET status = 'DONE',
         end_timestamp = CURRENT_TIMESTAMP
@@ -178,8 +149,6 @@ v_sql := q'[
 
 EXCEPTION
     WHEN OTHERS THEN
-
-        ROLLBACK;
 
         v_error := SQLERRM;
 
@@ -226,22 +195,17 @@ END IF;
 
 -- CREATE PROCEDURE 
 v_sql := q'[
-              CREATE OR REPLACE PROCEDURE prc_etl_date_daily
-             AS
-                v_count             NUMBER;
-                v_notification_id   VARCHAR2(200);
-                v_error             VARCHAR2(4000);
-             BEGIN
-    ------------------------------------------ 
-    -- [1.] INSERT NOTIFICATION (IN_PROGRESS)
-    ------------------------------------------
+ CREATE OR REPLACE PROCEDURE prc_etl_date_daily
+AS
+    v_notification_id   VARCHAR2(200);
+    v_error             VARCHAR2(4000);
+BEGIN
+    ----------------------------------------------------
+    -- [1] NOTIFICATION
+    ----------------------------------------------------
     INSERT INTO autonomous_dw_tech_owner.dwh_processes_notif (
-        process_name,
-        process_date,
-        process_type,
-        start_timestamp,
-        status,
-        admin_user
+        process_name, process_date, process_type,
+        start_timestamp, status, admin_user
     )
     VALUES (
         'ETL_DATE_DAILY_PROCESS',
@@ -251,201 +215,89 @@ v_sql := q'[
         'IN_PROGRESS',
         'AUTONOMOUS_DW_ADMIN'
     )
-     RETURNING notification_id INTO v_notification_id;
-     COMMIT;
-    ------------------------------------ 
-    -- [2.] VALIDATE SOURCE TABLES SYNC
-    ------------------------------------
- 
-    SELECT COUNT(*) INTO v_count
-    FROM dual
-    WHERE EXISTS ( SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_location 
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_city 
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_administrative_unit 
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_administrative_unit_type 
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                   SELECT 1 
-                   FROM autonomous_dw_landing_owner.dwh_country 
-                   WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                    SELECT 1 
-                    FROM autonomous_dw_landing_owner.dwh_region 
-                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                  ) AND EXISTS (
-                    SELECT 1 
-                    FROM autonomous_dw_landing_owner.dwh_language 
-                    WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                   ) AND EXISTS (
-                     SELECT 1 
-                     FROM autonomous_dw_landing_owner.dwh_currency 
-                     WHERE TRUNC(last_synced_at)=TRUNC(CURRENT_TIMESTAMP)
-                    );
-                    
-    IF v_count = 0 THEN
-        UPDATE autonomous_dw_tech_owner.dwh_processes_notif
-        SET status = 'ERROR',
-            end_timestamp = CURRENT_TIMESTAMP,
-            error_message = 'Source tables not synced today'
-        WHERE notification_id = v_notification_id;
-        COMMIT;
-        RETURN;
-    END IF;
-
-    ------------------------- 
-    -- [4.] MERGE DIM TABLE
-    -------------------------
-
-    MERGE INTO autonomous_dw_owner.dwh_date_dim d
-    USING (
-            SELECT DISTINCT
-                  loc.location_id AS location_address_code,
-                  loc.street_name || ' ' || loc.street_number AS location_address,
-                  loc.postal_code,
-                  TRIM(
-                       NVL(loc.building,'') || ' ' ||
-                       NVL(loc.staircase,'') || ' ' ||
-                       NVL(loc.floor,'') || ' ' ||
-                       NVL(loc.appartment_number,'')
-                      ) AS location_details,
-                 c.name AS city_name,
-                 CASE WHEN c.is_capital='Y' THEN 'Y' ELSE 'N' END AS capital_city_flag,
-                 c.latitude AS city_latitude,
-                 c.longitude AS city_longitude,
-                 c.population AS city_population, 
-                 c.area AS city_area,
-                 aut.name || ' ' || au.name AS administrative_unit_name,
-                 au.no_cities AS admin_unit_no_cities,
-                 au.population AS admin_unit_population,
-                 au.area  AS admin_unit_area,
-                 co.name AS country_name,
-                 co.population AS country_population,
-                 co.area AS country_area,
-                 co.rating AS country_rating,
-                 lang.name AS official_language_name,
-                 cur.name AS currency_name,
-                 reg.name AS region_name
-            FROM autonomous_dw_landing_owner.dwh_job j
-            JOIN autonomous_dw_landing_owner.dwh_location loc ON j.location_id = loc.location_id
-            JOIN autonomous_dw_landing_owner.dwh_city c ON loc.city_code = c.city_code
-            JOIN autonomous_dw_landing_owner.dwh_administrative_unit au ON c.administrative_unit_id = au.administrative_unit_id
-            JOIN autonomous_dw_landing_owner.dwh_administrative_unit_type aut ON au.administrative_unit_type_id = aut.administrative_unit_type_id
-            JOIN autonomous_dw_landing_owner.dwh_country co ON au.country_id = co.country_id
-            JOIN autonomous_dw_landing_owner.dwh_region reg ON co.region_id = reg.region_id
-       LEFT JOIN autonomous_dw_landing_owner.dwh_language lang ON co.official_lang_code = lang.lang_code
-       LEFT JOIN autonomous_dw_landing_owner.dwh_currency cur ON co.currency_code = cur.currency_code
-       WHERE trunc(j.last_update_date) = trunc(sysdate-1)
-
-          ) s
-    ON (d.location_address_code = s.location_address_code)
-    WHEN MATCHED THEN UPDATE SET
-
-        d.location_address          = s.location_address,
-        d.postal_code               = s.postal_code,
-        d.location_details          = s.location_details,
-        d.city_name                 = s.city_name,
-        d.capital_city_flag         = s.capital_city_flag,
-        d.city_latitude             = s.city_latitude,
-        d.city_longitude            = s.city_longitude,
-        d.city_population           = s.city_population,
-        d.city_area                 = s.city_area,
-        d.administrative_unit_name  = s.administrative_unit_name,
-        d.admin_unit_no_cities      = s.admin_unit_no_cities,
-        d.admin_unit_population     = s.admin_unit_population, 
-        d.admin_unit_area           = s.admin_unit_area,
-        d.country_name              = s.country_name,
-        d.country_population        = s.country_population,
-        d.country_area              = s.country_area,
-        d.country_rating            = s.country_rating,
-        d.official_language_name    = s.official_language_name,
-        d.currency_name             = s.currency_name,
-        d.region_name               = s.region_name,
-        d.deleted_flag              = 'N',
-        d.last_update_date          = CURRENT_TIMESTAMP
-                 
-    WHEN NOT MATCHED THEN INSERT (
-        location_address_code,
-        location_address,
-        postal_code,
-        location_details,
-        city_name,
-        capital_city_flag,
-        city_latitude,
-        city_longitude,
-        city_population,
-        city_area,
-        administrative_unit_name,
-        admin_unit_no_cities,
-        admin_unit_population, 
-        admin_unit_area,
-        country_name,
-        country_population,
-        country_area,
-        country_rating,
-        official_language_name,
-        currency_name,
-        region_name,
-        deleted_flag,
-        creation_date,
-        last_update_date
-    )
-    VALUES 
-    (
-        s.location_address_code,
-        s.location_address,
-        s.postal_code,
-        s.location_details,
-        s.city_name,
-        s.capital_city_flag,
-        s.city_latitude,
-        s.city_longitude,
-        s.city_population,
-        s.city_area,
-        s.administrative_unit_name,
-        s.admin_unit_no_cities,
-        s.admin_unit_population, 
-        s.admin_unit_area,
-        s.country_name,
-        s.country_population,
-        s.country_area,
-        s.country_rating,
-        s.official_language_name,
-        s.currency_name,
-        s.region_name,
-        'N',
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-    );
-
-    UPDATE autonomous_dw_owner.dwh_date_dim d
-    SET
-           d.deleted_flag = 'Y',
-           d.last_update_date = CURRENT_TIMESTAMP
-    WHERE NOT EXISTS (
-                       SELECT 1
-                       FROM autonomous_dw_landing_owner.dwh_job j
-                       JOIN autonomous_dw_landing_owner.dwh_location loc 
-                                ON j.location_id = loc.location_id
-                       WHERE loc.location_id = d.location_address_code
-                     )
-    AND d.deleted_flag = 'N';
+    RETURNING notification_id INTO v_notification_id;
 
     COMMIT;
 
----------------------------------------------------------------------- 
--- [5.] SUCCESS NOTIFICATION
-----------------------------------------------------------------------
+    ----------------------------------------------------
+    -- [2] INSERT ONLY NEW DATES FROM LANDING
+    ----------------------------------------------------
+    INSERT INTO autonomous_dw_owner.dwh_date_dim (
+        date_key,
+        full_date,
+        day_of_month,
+        day_of_week,
+        day_name,
+        week_of_year,
+        month_number,
+        month_name,
+        quarter,
+        year,
+        weekend_flag,
+        creation_date,
+        created_by,
+        last_update_date,
+        last_updated_by,
+        valid_from,
+        valid_to,
+        source_system,
+        deleted_flag
+    )
+    SELECT
+        TO_NUMBER(TO_CHAR(x.d,'YYYYMMDD')) AS date_key,
+        x.d AS full_date,
+        EXTRACT(DAY FROM x.d) AS day_of_month,
+        TO_NUMBER(TO_CHAR(x.d,'D')) AS day_of_week,
+        TRIM(TO_CHAR(x.d,'DAY')) AS day_name,
+        TO_NUMBER(TO_CHAR(x.d,'WW')) AS week_of_year,
+        EXTRACT(MONTH FROM x.d) AS month_number,
+        TRIM(TO_CHAR(x.d,'MONTH')) AS month_name,
+        TO_NUMBER(TO_CHAR(x.d,'Q')) AS quarter,
+        EXTRACT(YEAR FROM x.d) AS year,
+        CASE WHEN TO_CHAR(x.d,'D') IN ('1','7') THEN 'Y' ELSE 'N' END AS weekend_flag,
+        CURRENT_TIMESTAMP,
+        'ETL_DATE_PROCESS',
+        CURRENT_TIMESTAMP,
+        'ETL_DATE_PROCESS',
+        CURRENT_TIMESTAMP,
+        TO_TIMESTAMP(
+            '9999-12-31 23:59:59',
+            'YYYY-MM-DD HH24:MI:SS'
+        ),
+        'db_env',
+        'N'
+        
+    FROM (
+        SELECT DISTINCT apply_date AS d
+        FROM autonomous_dw_landing_owner.dwh_job_application
+        WHERE apply_date IS NOT NULL
+          AND TRUNC(apply_date) = TRUNC(SYSDATE - 1)
 
+        UNION
+
+        SELECT DISTINCT creation_date AS d
+        FROM autonomous_dw_landing_owner.dwh_job_application
+        WHERE creation_date IS NOT NULL
+          AND TRUNC(creation_date) = TRUNC(SYSDATE - 1)
+
+        UNION
+
+        SELECT DISTINCT last_update_date AS d
+        FROM autonomous_dw_landing_owner.dwh_job_application
+        WHERE last_update_date IS NOT NULL
+          AND TRUNC(last_update_date) = TRUNC(SYSDATE - 1)
+    ) x
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM autonomous_dw_owner.dwh_date_dim dd
+        WHERE dd.date_key = TO_NUMBER(TO_CHAR(x.d,'YYYYMMDD'))
+    );
+
+    COMMIT;
+
+    ----------------------------------------------------
+    -- [3] SUCCESS
+    ----------------------------------------------------
     UPDATE autonomous_dw_tech_owner.dwh_processes_notif
     SET status = 'DONE',
         end_timestamp = CURRENT_TIMESTAMP
@@ -455,9 +307,6 @@ v_sql := q'[
 
 EXCEPTION
     WHEN OTHERS THEN
-
-        ROLLBACK;
-
         v_error := SQLERRM;
 
         UPDATE autonomous_dw_tech_owner.dwh_processes_notif
@@ -469,8 +318,9 @@ EXCEPTION
         COMMIT;
 
         RAISE_APPLICATION_ERROR(-20002, v_error);
-
 END;
+
+
  ]';
 
 EXECUTE IMMEDIATE v_sql;
