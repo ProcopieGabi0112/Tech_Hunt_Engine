@@ -37,7 +37,7 @@ v_sql := q'[
         CREATE TABLE autonomous_db_owner.specialization (
 
           --business columns
-          specialization_id NUMBER(5,2) PRIMARY KEY,
+          specialization_id NUMBER(38,0) PRIMARY KEY,
           name VARCHAR2(200) NOT NULL,
           degree_type VARCHAR2(50) NOT NULL, 
           employment_rate NUMBER(5,2) NOT NULL, 
@@ -94,7 +94,7 @@ EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.courses_
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.entry_difficulty IS ''The difficulty to enter on this specialization''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.graduation_difficulty IS ''The difficulty to finish on this specialization''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.industry_reputation IS ''The industry reputation of this specialization''';
-EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.rating IS ''The rationg of the specialization''';
+EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.rating IS ''The rating of the specialization''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.institution_id IS ''The id of the institution where you can learn that specialization''';
 EXECUTE IMMEDIATE 'COMMENT ON COLUMN autonomous_db_owner.specialization.specialization_type_id IS ''The id of specialization type you can achieve form that specialization''';
 
@@ -192,7 +192,100 @@ IF v_count = 0 THEN
 END IF;
 DBMS_OUTPUT.PUT_LINE('[6.] The TRG_SPECIALIZATION_TECH_COL trigger for technical columns was created.');
 
-DBMS_OUTPUT.PUT_LINE('[7.] The script running is done!');
+--CREATE TRIGGER FOR SPECIALIZATION RATING SYNC
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_SPECIALIZATION_RATING_SYNC';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_specialization_rating_sync';
+END IF;
+--CREATE TRIGGER
+v_sql := '  CREATE OR REPLACE TRIGGER trg_specialization_rating_sync
+BEFORE INSERT OR UPDATE ON autonomous_db_owner.specialization
+FOR EACH ROW
+DECLARE
+    v_complexity_score specialization_type.complexity_score%TYPE;
+BEGIN
+    SELECT complexity_score
+    INTO v_complexity_score
+    FROM autonomous_db_owner.specialization_type
+    WHERE specialization_type_id = :NEW.specialization_type_id;
+
+    :NEW.rating := ROUND(
+          0.25 * :NEW.industry_reputation
+        + 0.20 * :NEW.employment_rate
+        + 0.08 * (100.00 - :NEW.graduation_difficulty)
+        + 0.10 * :NEW.courses_feedback
+        + 0.05 * (100.00 - :NEW.entry_difficulty)
+        + 0.07 * :NEW.teachers_feedback
+        + 0.25 * (100.00 - v_complexity_score)
+    , 2);
+END;
+';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_SPECIALIZATION_RATING_SYNC';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_SPECIALIZATION_RATING_SYNC trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[7.] The TRG_SPECIALIZATION_RATING_SYNC trigger for populating specialization rating column was created.');
+
+--CREATE TRIGGER FOR INSTITUTION RATING SYNC
+--DELETE TRIGGER IF EXISTS;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_INSTITUTION_RATING_SYNC';
+IF v_count > 0 THEN
+    EXECUTE IMMEDIATE 'DROP TRIGGER autonomous_db_owner.trg_institution_rating_sync';
+END IF;
+--CREATE TRIGGER
+v_sql := '  CREATE OR REPLACE TRIGGER trg_institution_avg_rating
+FOR INSERT OR UPDATE OR DELETE ON autonomous_db_owner.specialization
+COMPOUND TRIGGER
+
+    TYPE t_ids IS TABLE OF NUMBER INDEX BY PLS_INTEGER;
+    g_ids t_ids;
+
+AFTER EACH ROW IS
+BEGIN
+    IF INSERTING OR UPDATING THEN
+        g_ids(g_ids.COUNT+1) := :NEW.institution_id;
+    ELSIF DELETING THEN
+        g_ids(g_ids.COUNT+1) := :OLD.institution_id;
+    END IF;
+END AFTER EACH ROW;
+
+AFTER STATEMENT IS
+BEGIN
+    FOR i IN 1 .. g_ids.COUNT LOOP
+        UPDATE autonomous_db_owner.institution inst
+        SET inst.rating = (
+            SELECT ROUND(AVG(s.rating),2)
+            FROM autonomous_db_owner.specialization s
+            WHERE s.institution_id = g_ids(i)
+              AND s.deleted_flag = 'N'
+        )
+        WHERE inst.institution_id = g_ids(i);
+    END LOOP;
+END AFTER STATEMENT;
+
+END trg_institution_avg_rating;
+';
+EXECUTE IMMEDIATE v_sql;
+--CHECK IF THE TRIGGER WAS CREATED;
+SELECT COUNT(*) INTO v_count
+FROM user_triggers
+WHERE trigger_name = 'TRG_INSTITUTION_RATING_SYNC';
+IF v_count = 0 THEN
+    RAISE_APPLICATION_ERROR(-20001,'The TRG_INSTITUTION_RATING_SYNC trigger wasnt created properly.');
+END IF;
+DBMS_OUTPUT.PUT_LINE('[8.] The TRG_INSTITUTION_RATING_SYNC trigger for populating specialization rating column was created.');
+
+
+DBMS_OUTPUT.PUT_LINE('[9.] The script running is done!');
 EXCEPTION
   WHEN OTHERS THEN
     DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
