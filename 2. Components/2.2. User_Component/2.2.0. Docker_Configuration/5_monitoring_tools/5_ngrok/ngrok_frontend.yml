@@ -1,8 +1,0 @@
-version: "2"
-
-authtoken: 3DKB38CWp7T3AgBfAh2zRsgdtd2_4oeXWyzwtocgQbBT68Rdj
-
-tunnels:
-  nextjs:
-    addr: nextjs:3000
-    proto: http
