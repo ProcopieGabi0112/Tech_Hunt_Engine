@@ -1,0 +1,2 @@
+# Rulează training-ul zilnic la 02:00
+0 2 * * * root python3 /app/training.py >> /app/logs/training.log 2>&1

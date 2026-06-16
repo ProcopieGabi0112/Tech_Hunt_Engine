@@ -1,0 +1,72 @@
+import psycopg2
+import pandas as pd
+import torch
+from torch.utils.data import Dataset, DataLoader
+from model_dual_tower import DualTowerModel
+
+class RecDataset(Dataset):
+    def __init__(self, df):
+        self.X_user = torch.tensor(df.user_features.tolist(), dtype=torch.float32)
+        self.X_job = torch.tensor(df.job_features.tolist(), dtype=torch.float32)
+        self.y = torch.tensor(df.label.values, dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.y)
+
+    def __getitem__(self, idx):
+        return self.X_user[idx], self.X_job[idx], self.y[idx]
+
+def load_data():
+    conn = psycopg2.connect(
+        host="postgres",
+        dbname="server_interface_postgres_db",
+        user="postgres_admin_owner",
+        password="postgres_admin_pass"
+    )
+
+    df = pd.read_sql("SELECT * FROM db_ds_owner.recommandation_engine_training_table", conn)
+    conn.close()
+
+    df["user_features"] = df.apply(lambda r: [
+        r.user_age, r.gender == 'M', r.account_age_days,
+        *r.user_skill_embedding,
+        *r.user_cert_embedding,
+        *r.user_spec_embedding
+    ], axis=1)
+
+    df["job_features"] = df.apply(lambda r: [
+        r.salary_min, r.salary_max, r.demand_score, r.complexity_score,
+        r.job_category_score, r.job_title_score, r.job_level_score,
+        r.employment_type_score, r.work_type_score,
+        *r.job_skill_embedding,
+        r.company_rating, r.org_health_score, r.org_stability_score, r.financial_health_score
+    ], axis=1)
+
+    return df
+
+def train():
+    df = load_data()
+    dataset = RecDataset(df)
+    loader = DataLoader(dataset, batch_size=64, shuffle=True)
+
+    user_dim = len(df.user_features.iloc[0])
+    job_dim = len(df.job_features.iloc[0])
+
+    model = DualTowerModel(user_dim, job_dim)
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    loss_fn = torch.nn.BCELoss()
+
+    for epoch in range(10):
+        for user_vec, job_vec, label in loader:
+            optimizer.zero_grad()
+            pred = model(user_vec, job_vec)
+            loss = loss_fn(pred, label)
+            loss.backward()
+            optimizer.step()
+
+        print(f"Epoch {epoch} loss = {loss.item()}")
+
+    torch.save(model.state_dict(), "/app/models/dual_tower.pt")
+
+if __name__ == "__main__":
+    train()

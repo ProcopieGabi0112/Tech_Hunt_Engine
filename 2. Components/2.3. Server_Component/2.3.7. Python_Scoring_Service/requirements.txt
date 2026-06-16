@@ -1,0 +1,6 @@
+torch
+numpy
+psycopg2-binary
+pandas
+scikit-learn
+transformers

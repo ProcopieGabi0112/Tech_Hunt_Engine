@@ -1,0 +1,83 @@
+import psycopg2
+import pandas as pd
+import torch
+from fpdf import FPDF
+from model_dual_tower import DualTowerModel
+
+def generate_pdf(user_id, user_info, jobs):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, txt=f"Job Recommendations for {user_info['full_name']}", ln=True)
+
+    for job in jobs:
+        pdf.cell(200, 10, txt=f"- {job['job_title']} (score: {job['score']:.3f})", ln=True)
+
+    return pdf.output(dest="S").encode("latin1")
+
+def score():
+    conn = psycopg2.connect(
+        host="postgres",
+        dbname="server_interface_postgres_db",
+        user="postgres_admin_owner",
+        password="postgres_admin_pass"
+    )
+    cur = conn.cursor()
+
+    df = pd.read_sql("SELECT * FROM db_ds_owner.recommandation_engine_test_table", conn)
+
+    df["user_features"] = df.apply(lambda r: [...], axis=1)
+    df["job_features"] = df.apply(lambda r: [...], axis=1)
+
+    user_dim = len(df.user_features.iloc[0])
+    job_dim = len(df.job_features.iloc[0])
+
+    model = DualTowerModel(user_dim, job_dim)
+    model.load_state_dict(torch.load("/app/models/dual_tower.pt"))
+    model.eval()
+
+    for user_id in df.user_key.unique():
+        user_rows = df[df.user_key == user_id]
+
+        scores = []
+        for _, row in user_rows.iterrows():
+            u = torch.tensor(row.user_features, dtype=torch.float32)
+            j = torch.tensor(row.job_features, dtype=torch.float32)
+            score = model(u.unsqueeze(0), j.unsqueeze(0)).item()
+            scores.append((row.job_key, score))
+
+        scores.sort(key=lambda x: x[1], reverse=True)
+        top_jobs = scores[:5]
+
+        # Insert into job_application
+        for job_id, score_val in top_jobs:
+            cur.execute("""
+                INSERT INTO db_ds_owner.job_application
+                (application_id, apply_date, apply_source, status, salary, user_id, job_id, created_by, last_updated_by)
+                VALUES (DEFAULT, NOW(), 'AI_MODEL', 'RECOMMENDED', '', %s, %s, 'AI', 'AI')
+            """, (user_id, job_id))
+
+        # Generate PDF
+        user_info = {"full_name": "User Name"}  # load from DB if needed
+        pdf_bytes = generate_pdf(user_id, user_info, [
+            {"job_title": f"Job {jid}", "score": s} for jid, s in top_jobs
+        ])
+
+        # Insert into email table
+        cur.execute("""
+            INSERT INTO db_ds_owner.email
+            (email_code, subject, content, attachment, arrival_time, importance, receiver, sender, created_by, last_updated_by)
+            VALUES (DEFAULT, %s, %s, %s, NOW(), 'HIGH', %s, 0, 'AI', 'AI')
+        """, (
+            "Your job recommendations",
+            "See attached PDF",
+            psycopg2.Binary(pdf_bytes),
+            user_id
+        ))
+
+    conn.commit()
+    conn.close()
+
+if __name__ == "__main__":
+    score()
