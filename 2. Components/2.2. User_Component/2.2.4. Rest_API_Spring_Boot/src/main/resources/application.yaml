@@ -1,0 +1,106 @@
+spring:
+  application:
+    name: tech_hunter_engine_api
+
+  datasource:
+    # DEV ENVIRONMENT
+    url: jdbc:postgresql://localhost:5432/user_interface_postgres_db
+    # PROD ENVIRONMENT
+    #url: jdbc:postgresql://postgres:5432/user_interface_postgres_db
+    username: db_owner
+    password: DbOwnerPass
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    mongodb:
+      # DEV ENVIRONMENT
+      uri: mongodb://localhost:27017/user_interface_mongo_db
+      # PROD ENVIRONMENT
+      #uri: mongodb://mongodb:27017/user_interface_mongo_db
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: db_owner
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: procopiegabi@gmail.com
+    password: nzih qfju oskt skre
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+  flyway:
+    enabled: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id:  
+            client-secret:  
+            scope:
+              - email
+              - profile
+
+          github:
+            client-id:  
+            client-secret:  
+            scope:
+              - user:email
+
+      provider:
+        github:
+          user-info-uri: https://api.github.com/user
+
+autoconfigure:
+  exclude:
+    - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+
+logging:
+  level:
+    org.mongodb.driver: OFF
+    org.springframework.amqp: OFF
+    com.zaxxer.hikari: INFO
+    org.springframework.jdbc: DEBUG
+    #org.hibernate.SQL: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show_details: always
+  health:
+    db:
+      enabled: true
+    mongo:
+      enabled: true
+    rabbit:
+      enabled: true
+    kafka:
+      enabled: true
+
+app:
+  jwt:
+    secret: 4A6F686E446F655365637265744B657931323334353637383930
+    #expiration: 3600000
+    expiration: 86400000
