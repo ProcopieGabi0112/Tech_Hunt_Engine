@@ -1,0 +1,159 @@
+version: "3.9"
+
+services:
+  postgres:
+    build: ./1_server_interface_postgres_database/0_postgres_custom_image
+    container_name: server_postgres_db
+    environment:
+      POSTGRES_USER: postgres_admin_owner
+      POSTGRES_PASSWORD: postgres_admin_pass
+      POSTGRES_DB: server_interface_postgres_db
+    command: >
+      postgres
+        -c shared_preload_libraries=pg_cron
+        -c cron.database_name=server_interface_postgres_db
+    ports:
+      - "5440:5432"
+    volumes:
+      - ./1_server_interface_postgres_database/1_postgres_database:/var/lib/postgresql/data
+      - ./1_server_interface_postgres_database/2_database_initialization:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres_admin_owner -d server_interface_postgres_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: server_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True'
+    ports:
+      - "5055:80"
+    depends_on:
+      - postgres
+    volumes:
+      - ./1_server_interface_postgres_database/3_pgadmin_initialization:/var/lib/pgadmin
+    restart: always
+
+  ngrok-server-databases:
+    image: ngrok/ngrok:latest
+    container_name: ngrok_server_databases
+    user: root
+    command: ["start", "--all", "--config=/etc/ngrok/ngrok_db.yml"]
+    volumes:
+      - ./6_monitoring_tools/5_ngrok/ngrok_db.yml:/etc/ngrok/ngrok_db.yml
+    ports:
+      - "4042:4040"
+    depends_on:
+      - postgres
+    restart: always
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: server_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./2_server_interface_qdrant_database/1_qdrant_storage:/qdrant/storage
+      - ./2_server_interface_qdrant_database/2_qdrant_configuration/qdrant.yaml:/qdrant/config/production.yaml
+      - ./2_server_interface_qdrant_database/3_qdrant_initialization:/qdrant/init
+    environment:
+      QDRANT__STORAGE__STORAGE_PATH: "/qdrant/storage"
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    restart: always
+
+  server_grafana:
+       image: grafana/grafana
+       container_name: server_grafana
+       ports:
+         - "3020:3000"
+       volumes:
+         - ./6_monitoring_tools/2_grafana:/var/lib/grafana
+       restart: always
+
+  nifi:
+    image: apache/nifi:1.27.0
+    container_name: nifi
+    ports:
+      - "9080:9080"
+    environment:
+      - NIFI_WEB_HTTP_PORT=9080 
+      - SINGLE_USER_CREDENTIALS_USERNAME=admin
+      - SINGLE_USER_CREDENTIALS_PASSWORD=adminpassword123
+    volumes:
+      - ./3_server_interface_nifi/conf:/opt/nifi/nifi-current/conf
+      - ./3_server_interface_nifi/state:/opt/nifi/nifi-current/state
+      - ./3_server_interface_nifi/content_repository:/opt/nifi/nifi-current/content_repository
+      - ./3_server_interface_nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
+      - ./3_server_interface_nifi/database_repository:/opt/nifi/nifi-current/database_repository
+      - ./3_server_interface_nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository
+      - ./3_server_interface_nifi/drivers:/opt/nifi/drivers
+      - ./3_server_interface_nifi/wallets/wallet_adb:/opt/nifi/wallet_adb
+      - ./3_server_interface_nifi/wallets/wallet_adb:/opt/nifi/wallet_adw
+    networks:
+      - nifi_net
+
+  training_service:
+    build: ./4_training_service
+    container_name: training_service
+    environment:
+      PYSPARK_PYTHON: python3
+      PYSPARK_DRIVER_PYTHON: python3
+      TNS_ADMIN: /opt/oracle_wallet
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: server_interface_postgres_db
+      POSTGRES_USER: postgres_admin_owner
+      POSTGRES_PASSWORD: postgres_admin_pass
+    volumes:
+      - ./4_training_service/jobs:/app/jobs
+      - ./4_training_service/config:/app/config
+      - ./4_training_service/oracle_wallet:/opt/oracle_wallet
+      - ./4_training_service/spark-logs:/app/logs
+      - ./4_training_service/models:/app/models
+    depends_on:
+      - postgres
+    ports:
+      - "4040:4040"
+    # DEV MODE
+    # docker compose up
+    # docker exec -it training_service bash
+    # spark-submit --properties-file /app/config/spark-defaults.conf /app/jobs/training_job.py
+    command: ["tail", "-f", "/dev/null"]
+    # PROD MODE
+    # docker compose up -d
+    #command: command: ["sh", "-c", "python3 /app/scheduler_postgres.py & python3 /app/scheduler_qdrant.py"]
+
+  training_service_history:
+    image: apache/spark:3.5.1
+    container_name: spark_history_server
+    command: >
+      bash -c "/opt/spark/bin/spark-class org.apache.spark.deploy.history.HistoryServer"
+    environment:
+      SPARK_HISTORY_OPTS: "-Dspark.history.fs.logDirectory=/tmp/spark-events"
+    volumes:
+      - ./4_training_service/spark-logs:/tmp/spark-events
+    ports:
+      - "18080:18080"
+
+  scoring_service:
+    build: ./5_scoring_service
+    container_name: scoring_service
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: server_interface_postgres_db
+      POSTGRES_USER: postgres_admin_owner
+      POSTGRES_PASSWORD: postgres_admin_pass
+    volumes:
+      - ./5_scoring_service/models:/app/models
+      - ./5_scoring_service/python-logs:/app/logs
+    depends_on:
+      - postgres
+    command: ["python3", "/app/scheduler_recommendations.py"]
+
+networks:
+  nifi_net:
+    driver: bridge
