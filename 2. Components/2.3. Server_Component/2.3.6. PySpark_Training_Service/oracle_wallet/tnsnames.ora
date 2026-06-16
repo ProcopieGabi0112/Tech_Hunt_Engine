@@ -1,0 +1,12 @@
+techhuntenginedw_high = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-paris-1.oraclecloud.com))(connect_data=(service_name=g90ce4847b77dfa_techhuntenginedw_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+techhuntenginedw_medium = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-paris-1.oraclecloud.com))(connect_data=(service_name=g90ce4847b77dfa_techhuntenginedw_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+techhuntenginedw_low = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-paris-1.oraclecloud.com))(connect_data=(service_name=g90ce4847b77dfa_techhuntenginedw_low.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+techhuntenginedw_tp = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-paris-1.oraclecloud.com))(connect_data=(service_name=g90ce4847b77dfa_techhuntenginedw_tp.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+techhuntenginedw_tpurgent = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.eu-paris-1.oraclecloud.com))(connect_data=(service_name=g90ce4847b77dfa_techhuntenginedw_tpurgent.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+
+
